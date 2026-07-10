@@ -75,7 +75,24 @@ Claude returns a **confidence score + up-to-2 candidate species**; if low confid
 - **Phase 2 — Add-by-Photo + Claude**: camera/upload UI → `/api/identify` (Sonnet 5 vision) → confidence/candidate handling → follow-up questions flow → potted/soil/drainage/light → save. Fetch-or-generate care profiles, cache to DB.
 - **Phase 3 — Reminders & Dashboard**: `care.ts` engine, generate `care_tasks` per plant, "due today" dashboard with cute reminder cards + "mark done".
 - **Phase 4 — Push + Email**: `sw.js` push handler, VAPID keys, subscribe flow (tap-gated), `/api/cron/morning`, Resend email backup, `settings` (time/timezone/toggles). Test on real iPhone (installed to Home Screen).
-- **Phase 5 — Polish & Deploy**: frontend-design polish pass, animations/micro-interactions, empty states, i18n (English/Spanish-Spain/German/Korean — `next-intl`, cookie-based locale, no URL prefix, synced to `settings.language`), investigate + fix the Turbopack dev-server stale-route 404 (LESSONS_LEARNED.md L12), Vercel + Supabase + Resend deploy, final Commandments check. (Nice-to-haves to discuss: watering history log, health/photo journal, plant "mood" status, share card.)
+- **Phase 5 — Polish & Deploy**: frontend-design polish pass, animations/micro-interactions, empty states, i18n (English/Spanish-Spain/German/Korean — `next-intl`, cookie-based locale, no URL prefix, synced to `settings.language`), investigate + fix the Turbopack dev-server stale-route 404 (LESSONS_LEARNED.md L12), **performance pass — app feels slow/unreactive in production** (see below), final Commandments check. (Nice-to-haves to discuss: watering history log, health/photo journal, plant "mood" status, share card.)
+  - Vercel + Supabase + Resend deploy: ✅ already done (2026-07-10) — live at
+    https://sprout-ten-theta.vercel.app, GitHub Actions cron wired, verified
+    end-to-end (see progress.md Phase 4).
+  - **Performance note (2026-07-10):** user reports the deployed app feels
+    slow/unreactive. Measured server TTFB on the live deployment: `/` ~0.7-0.9s,
+    `/garden` ~0.5s, `/settings` ~0.3s — all real, not just perception.
+    Suspect causes to investigate first: (1) every page route is
+    `export const dynamic = "force-dynamic"`, so there's zero caching and every
+    navigation pays a full Supabase round trip; (2) no `loading.tsx` per route
+    segment, so navigations show nothing until the full server response
+    resolves instead of an instant skeleton; (3) Vercel Hobby serverless cold
+    starts; (4) possible Vercel/Supabase region mismatch adding cross-region
+    latency to every DB call; (5) `lib/supabase.ts`'s client caching
+    (`_server`/`_browser` module vars) doesn't help across cold serverless
+    invocations. Start by checking Vercel/Supabase region alignment (cheap,
+    high-impact if mismatched) and adding `loading.tsx` skeletons (cheap,
+    directly addresses "unreactive" even before touching data-fetching).
 
 ## Verification
 
