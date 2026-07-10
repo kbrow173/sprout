@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+/*
+  Sprout design system — "mostly white + fun forest/light green".
+  All color, radius, and type decisions live here as tokens so a later
+  Claude Design pass can restyle the whole app by editing this one block.
+  Utilities like `bg-forest-700`, `text-sprout-500`, `rounded-blob` are
+  generated from the @theme names below.
+*/
+
+:root {
+  /* Canvas / surfaces — white-forward with the faintest green warmth */
+  --color-canvas: #f8faf7;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f1f6f0;
+
+  /* Forest greens — the hero */
+  --color-forest-900: #102e1c;
+  --color-forest-800: #17422a;
+  --color-forest-700: #1f5b39; /* primary brand */
+  --color-forest-600: #2b7a4b;
+  --color-forest-500: #379a5f;
+
+  /* Sprout greens — the fresh, light pop */
+  --color-sprout-600: #46b26a;
+  --color-sprout-500: #62c47d;
+  --color-sprout-400: #8ad79c;
+  --color-sprout-300: #b6e7c1;
+  --color-sprout-200: #dcf4e1;
+  --color-sprout-100: #eef9f0;
+
+  /* Ink & muted — green-tinted neutrals, never pure black */
+  --color-ink: #16241b;
+  --color-muted: #5b6b60;
+  --color-faint: #8a998f;
+  --color-line: #e4ece5;
+
+  /* Bloom — a warm coral used *sparingly* for delight (streaks, hearts, love) */
+  --color-bloom-500: #f2765e;
+  --color-bloom-100: #fdeae4;
+
+  /* Sun — a soft honey for "harvest"/rewards accents */
+  --color-sun-500: #f5b545;
+  --color-sun-100: #fdf1d9;
+
+  /* Sky — a calm blue reserved for "water" tasks */
+  --color-sky-500: #4aa6d6;
+  --color-sky-100: #e3f2fa;
+
+  --radius-blob: 1.75rem;
+  --shadow-lift: 0 10px 30px -12px rgba(16, 46, 28, 0.18);
+  --shadow-soft: 0 2px 10px -4px rgba(16, 46, 28, 0.12);
+}
+
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-surface: var(--color-surface);
+  --color-surface-sunken: var(--color-surface-sunken);
+
+  --color-forest-900: var(--color-forest-900);
+  --color-forest-800: var(--color-forest-800);
+  --color-forest-700: var(--color-forest-700);
+  --color-forest-600: var(--color-forest-600);
+  --color-forest-500: var(--color-forest-500);
+
+  --color-sprout-600: var(--color-sprout-600);
+  --color-sprout-500: var(--color-sprout-500);
+  --color-sprout-400: var(--color-sprout-400);
+  --color-sprout-300: var(--color-sprout-300);
+  --color-sprout-200: var(--color-sprout-200);
+  --color-sprout-100: var(--color-sprout-100);
+
+  --color-ink: var(--color-ink);
+  --color-muted: var(--color-muted);
+  --color-faint: var(--color-faint);
+  --color-line: var(--color-line);
+
+  --color-bloom-500: var(--color-bloom-500);
+  --color-bloom-100: var(--color-bloom-100);
+  --color-sun-500: var(--color-sun-500);
+  --color-sun-100: var(--color-sun-100);
+  --color-sky-500: var(--color-sky-500);
+  --color-sky-100: var(--color-sky-100);
+
+  --radius-blob: var(--radius-blob);
+
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  height: 100%;
+  /* Respect iOS safe areas when installed to the Home Screen */
+  background: var(--color-canvas);
+}
+
+body {
+  min-height: 100%;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  /* Prevent the whole PWA from rubber-band scrolling behind the nav */
+  overscroll-behavior-y: none;
+}
+
+/* Headings lean on the characterful display face by default. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* Utility: organic "leaf" corner used on hero cards. */
+@utility rounded-leaf {
+  border-radius: 1.75rem 1.75rem 1.75rem 0.5rem;
+}
+
+@keyframes sprout-pop {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@utility animate-pop {
+  animation: sprout-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

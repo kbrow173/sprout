@@ -1,0 +1,58 @@
+SPROUT — PHASE 2 REAL-WORLD TEST CHECKLIST
+(Add-by-Photo + Claude. Do these on your phone, ideally with real houseplants
+nearby — the more varied the better.)
+
+RUN LOCALLY:
+  [ ] From the sprout folder: npm run dev
+  [ ] Open the app on your phone (same wifi, use your computer's local IP)
+
+HAPPY PATH — CONFIDENT ID:
+  [ ] Tap the (+) Add button → "Take a photo"
+  [ ] Point at an easy, distinctive plant (e.g. a Monstera or Snake Plant) and shoot
+  [ ] A preview of your photo appears with "Taking a look…"
+  [ ] Within a few seconds: a confirm card shows a common + scientific name
+  [ ] Tap "Yes, that's it 🌱" — "Gathering care info…" appears briefly
+  [ ] The usual questions appear (potted/soil/drainage/light/nickname/date)
+  [ ] Submit — you land on a full care sheet, and the plant appears on Garden
+
+UNCERTAIN ID:
+  [ ] Photograph a less distinctive plant, or a leaf close-up with no context
+  [ ] Instead of one confirm card, you should see "Not 100% sure — which one
+      looks right?" with up to 3 tappable options
+  [ ] Tap one — flow continues into the questions step like the happy path
+  [ ] Confirm "None of these — search manually" link goes to the library search
+
+NOT A PLANT:
+  [ ] Take a photo of something that is clearly not a plant (your ceiling, your
+      hand, a wall)
+  [ ] Confirm you get a friendly error: "Couldn't find a plant in that photo" —
+      not a fake plant name, not a crash
+  [ ] "Try again" retakes; "Search manually" jumps to the library
+
+CHOOSE FROM LIBRARY (photo picker, not camera):
+  [ ] Tap "Choose from library" and pick an existing photo of a plant
+  [ ] Confirm the same ID → confirm → questions flow works
+
+RETAKE / CHANGE YOUR MIND:
+  [ ] Start a photo ID, then before it finishes tap back / immediately pick a
+      DIFFERENT photo — confirm the app doesn't get confused (no mismatched
+      species+photo, no stuck spinner)
+  [ ] From a confirm card, tap "Not quite — retake photo" — confirm you're back
+      at the camera/library buttons, not stuck
+
+SAVED PLANT HAS A PHOTO:
+  [ ] After saving a plant via the camera flow, open its care sheet — it should
+      look identical to a manually-added plant (illustration art, not your raw
+      photo — that's intentional, the illustration is always what's shown)
+
+EDGE CASES (try to break it):
+  [ ] Airplane mode mid-flow (after tapping a photo) — confirm you get a clear
+      error message, not a silent hang
+  [ ] A very blurry/dark photo — confirm you still get SOME response (an
+      uncertain ID or "couldn't find a plant"), not a crash
+  [ ] Add the SAME plant twice via photo — confirm the second one is instant
+      (cached care profile) rather than waiting again for Claude to "think"
+
+REPORT BACK: anything that felt slow, confusing, or wrong — especially any case
+where the wrong plant name ended up on the wrong photo, or the app got stuck on
+a spinner.

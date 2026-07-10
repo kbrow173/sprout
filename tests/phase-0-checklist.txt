@@ -1,0 +1,44 @@
+SPROUT — PHASE 0 REAL-WORLD TEST CHECKLIST
+(Foundation & Design System. Do these on your phone + a desktop browser.)
+
+SETUP (one-time, needed before Phase 1 data works — not required for these tests):
+  [ ] Create a Supabase project at supabase.com
+  [ ] In the Supabase SQL editor, paste + run  supabase/schema.sql
+  [ ] Copy .env.local.example -> .env.local and fill in the Supabase values
+      (you can leave Anthropic/Resend/VAPID blank until later phases)
+
+RUN LOCALLY:
+  [ ] From the sprout folder, run:  npm run dev
+  [ ] Open http://localhost:3006 in your phone's browser (same Wi-Fi) or desktop
+
+LOOK & FEEL (should feel white + fresh green, playful, NOT generic):
+  [ ] Background is soft white, headings are a rounded chunky font (Bricolage)
+  [ ] "Today" screen shows a greeting that matches the time of day
+      (morning/afternoon/evening emoji changes)
+  [ ] The empty-state card has a green leaf icon in a pale-green circle and a
+      dark-green "Add your first plant" button
+
+NAVIGATION:
+  [ ] Bottom bar shows: Today, Garden, a big raised green (+) button, Settings
+  [ ] Tapping (+) opens the "Add a plant" screen
+  [ ] Tapping Garden shows an empty-garden card; Settings shows 3 preference rows
+  [ ] The active tab turns dark green; the others are grey
+  [ ] Tap the (+) and confirm the icon nudges/rotates slightly (micro-interaction)
+
+INSTALL AS AN APP (the important PWA check):
+  [ ] iPhone Safari: Share -> "Add to Home Screen" -> confirm a Sprout icon appears
+  [ ] Open Sprout from the Home Screen icon
+  [ ] It opens FULL SCREEN (no Safari address bar) = standalone mode works
+  [ ] The status bar / theme area reads as dark green, not default white
+  [ ] Android Chrome: menu -> "Install app" also works (optional)
+
+EDGE CASES (try to break it):
+  [ ] Rotate the phone / resize the desktop window narrow-to-wide — layout stays
+      centered in a comfortable column, nothing overflows off-screen
+  [ ] Scroll down on any screen — the bottom nav stays fixed and doesn't cover
+      the last button/content (there's padding above it)
+  [ ] Visit a made-up URL like /plant/abc123 — you should see the placeholder
+      care sheet with a "Garden" back link, not a crash
+
+REPORT BACK: note anything that looks off (color, spacing, font, a tap that does
+nothing unexpectedly) and we'll fix it before Phase 1 is called done.

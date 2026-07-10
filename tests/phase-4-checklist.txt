@@ -1,0 +1,63 @@
+SPROUT — PHASE 4 REAL-WORLD TEST CHECKLIST
+(Push + Email. Some of this needs your real phone — push permission can't be
+granted by any automated tool.)
+
+BEFORE YOU START — three setup steps:
+  [ ] Run supabase/migration_003_morning_send_tracking.sql in the Supabase
+      SQL editor (paste, run — same as the harvest_days migration).
+      /api/cron/morning will 500 until this is done.
+  [ ] Sign up at resend.com, create an API key, paste it into
+      RESEND_API_KEY in .env.local (and verify a sending domain, or use
+      Resend's onboarding domain for testing).
+  [ ] npm run dev
+
+SETTINGS PAGE:
+  [ ] Open Settings — confirm your email is filled in, morning time shows
+      7:00 AM, timezone shows Central (Chicago)
+  [ ] Change the email, tap Save — reload the page, confirm it stuck
+  [ ] Try an obviously invalid email (e.g. "not-an-email") — confirm you get
+      an error, not a silent failure
+  [ ] Change the morning time to something with minutes, e.g. 7:45 AM — after
+      saving, reload and confirm it shows 7:00 AM (rounded to the hour — the
+      helper text under the field explains why)
+
+PUSH NOTIFICATIONS (desktop first, real device required for iOS):
+  [ ] On desktop Chrome, tap the "Phone notifications" toggle — your browser
+      should prompt for notification permission
+  [ ] Allow it — the toggle should turn green/on
+  [ ] Reload the page — toggle should still show on (not reset)
+  [ ] Tap it again to turn off — browser subscription should be removed
+  [ ] iOS: install Sprout to your iPhone's Home Screen first (Share → Add to
+      Home Screen) — push does NOT work in Safari's regular browser tab, only
+      from the installed PWA
+  [ ] Open the installed app, go to Settings, tap the toggle — you should get
+      the iOS permission prompt
+  [ ] Allow it — toggle turns on
+
+TRIGGERING A REAL MORNING SEND:
+  [ ] Make sure at least one plant has something due today (check the Today
+      page, or wait for one naturally)
+  [ ] Temporarily set your morning time to the next upcoming hour (e.g. if
+      it's 2:15pm, set it to 3:00 PM) so you don't have to wait until
+      tomorrow
+  [ ] Manually trigger the workflow: on GitHub, go to Actions → "Sprout
+      morning cron" → "Run workflow" (needs APP_URL + CRON_SECRET repo
+      secrets set first, once deployed)
+  [ ] Confirm you get a push notification on your phone AND an email in your
+      inbox within a minute or two
+  [ ] Tap the push notification — confirm it opens the app to the Today page
+  [ ] Run the workflow again immediately — confirm you do NOT get a second
+      push/email (the same-day dedup guard should skip it)
+
+EDGE CASES (try to break it):
+  [ ] With push notifications off and email off, trigger the workflow —
+      confirm nothing sends but the app doesn't error
+  [ ] With zero plants due, trigger the workflow — confirm no notification
+      arrives (nothing to report) and no error
+  [ ] Unsubscribe from push, then trigger the workflow while email is still
+      on — confirm you get the email but no push (and no crash from having
+      zero subscriptions)
+
+REPORT BACK: whether the push notification actually arrived on your phone,
+whether the email looked right, and anything that felt confusing about the
+Settings page.

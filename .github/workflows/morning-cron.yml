@@ -1,0 +1,19 @@
+name: Sprout morning cron
+
+# Runs hourly and calls /api/cron/morning — the route itself decides whether
+# it's actually the user's configured morning time (DST-proof, no schedule to
+# hand-adjust). Exists on GitHub Actions instead of Vercel Cron because
+# Vercel Hobby limits cron to once/day at a fixed UTC time.
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/cron/morning
+        run: |
+          curl -sf -X POST "${{ secrets.APP_URL }}/api/cron/morning" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

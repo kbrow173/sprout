@@ -1,0 +1,49 @@
+SPROUT — PHASE 1 REAL-WORLD TEST CHECKLIST
+(Garden & Care DB. The species library is already seeded — 28 plants live in
+your Supabase project. Do these on your phone + desktop.)
+
+RUN LOCALLY:
+  [ ] From the sprout folder: npm run dev
+  [ ] Open http://localhost:3006
+
+ADD A PLANT (manual path — camera comes in Phase 2):
+  [ ] Tap the big green (+) button, then "Choose from our plant library"
+  [ ] Type "snake" in the search box — confirm it filters to Snake Plant / ZZ Plant
+  [ ] Tap "Snake Plant" — confirm follow-up questions appear (Potted?, soil,
+      drainage, light, nickname, date)
+  [ ] Tap "Not yet" (not potted) — confirm the soil question is replaced by a
+      yellow "We'll recommend a mix for you" box
+  [ ] Tap "Yes, potted" again — confirm the soil textbox + drainage checkbox reappear
+  [ ] Pick a light chip (e.g. "Low light") — it should highlight dark green
+  [ ] Type a nickname, e.g. "Spike"
+  [ ] Tap "Add Snake Plant to my garden 🌱"
+  [ ] You should land on a full care sheet: watering days, light, soil, rotate/
+      repot, propagation, pruning, toxicity, a green "Do" list, a coral "Don't" list
+
+GARDEN GRID:
+  [ ] Tap "Garden" in the bottom nav — your plant appears as an illustrated card
+      with its nickname and species name
+  [ ] Add a second, different plant (try a succulent like Jade Plant) — confirm
+      the grid shows 2 cards side by side with DIFFERENT illustrations
+  [ ] Header now reads "2 plants"
+
+CARE SHEET DETAIL:
+  [ ] Tap a card — confirm it opens that exact plant's care sheet (not the wrong one)
+  [ ] Confirm sections you'd expect are there; for an herb (Basil/Mint) there
+      should be an extra "Harvesting" section that other plants don't have
+
+DELETE:
+  [ ] On a plant's care sheet, tap "Remove from garden"
+  [ ] Confirm a browser confirmation popup appears asking to confirm
+  [ ] Confirm it — you should land back on Garden with that plant gone
+
+EDGE CASES (try to break it):
+  [ ] Search for something that doesn't exist ("xyzzy") — see the friendly
+      "No matches" message, not a blank screen or crash
+  [ ] Visit a made-up plant URL like /plant/does-not-exist — see a normal
+      "page not found," not a crash or blank white screen
+  [ ] With zero plants, Garden and Today both show the friendly empty-state
+      illustration with an "Add a plant" button
+
+REPORT BACK: anything that looks off (wrong illustration for a plant type,
+text overflowing a card, a button that doesn't respond) and we'll fix it.

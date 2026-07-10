@@ -1,0 +1,43 @@
+SPROUT — PHASE 3 REAL-WORLD TEST CHECKLIST
+(Reminders & Dashboard. Do these on your phone.)
+
+RUN LOCALLY:
+  [ ] From the sprout folder: npm run dev
+  [ ] Open the app
+
+FIRST REMINDERS:
+  [ ] Add a new plant (any way — camera or library)
+  [ ] Go to "Today" — it should say "Nothing due — yet" (reminders start from
+      today, so nothing is due the same day you add a plant — this is correct,
+      not a bug)
+  [ ] Add a HERB (Basil, Mint, Rosemary, etc.) — its care sheet should show a
+      "Harvesting" section, confirming harvest reminders are wired up too
+
+OVER THE NEXT FEW DAYS:
+  [ ] Come back once a watering is actually due — it should appear on Today
+      with a droplet icon and the plant's name
+  [ ] If you miss a day, it should show "· overdue" in a coral/red color, and
+      sort above tasks that are merely due today (most overdue first)
+  [ ] Tap the plant's name/photo on a reminder card — it opens that plant's
+      full care sheet
+  [ ] Tap the green checkmark — the card disappears from Today immediately,
+      no page reload needed
+  [ ] Confirm the reminder doesn't come back until roughly the right number of
+      days later (matches the "Watering" interval on the plant's care sheet)
+
+MULTIPLE PLANTS / MULTIPLE TASKS:
+  [ ] With 2+ plants who both have something due, confirm Today shows both,
+      each with the right plant name and task type (don't cross-wire)
+  [ ] Mark one done, confirm ONLY that one disappears — the other stays
+
+EDGE CASES (try to break it):
+  [ ] Double-tap the checkmark quickly — confirm it doesn't error out or
+      double-submit weirdly (button should briefly disable)
+  [ ] Delete a plant that has a reminder currently showing on Today — reload
+      Today and confirm the reminder is gone too (no orphaned card)
+  [ ] With zero due tasks, Today shows the friendly "Nothing due — yet" empty
+      state with an "Add a plant" button, not a blank screen
+
+REPORT BACK: anything that looks off (wrong plant on a reminder, a reminder
+that never appears when it should, a due date that seems off by a day) and
+we'll fix it.
