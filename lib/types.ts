@@ -8,6 +8,8 @@
 export type LightLevel = "low" | "medium" | "bright";
 export type Difficulty = "easy" | "medium" | "fussy";
 export type CareTaskType = "water" | "rotate" | "prune" | "harvest" | "repot";
+/** Outcome of a moisture check on a water task (adaptive watering). */
+export type WaterCheckStatus = "watered" | "moist";
 export type ProfileSource = "seed" | "claude";
 export type Locale = "en" | "es" | "de" | "ko";
 /** Locales that need translation — species_care itself already IS English. */
@@ -94,6 +96,12 @@ export interface CareTask {
   interval_days: number;
   last_done_at: string | null;
   next_due_at: string; // ISO date
+  /** Adaptive-watering multiplier on the species interval. 1.0 for non-water tasks. */
+  adjust_factor: number;
+  /** Last moisture check (may not have watered). Null until first checked. */
+  last_checked_at: string | null;
+  /** Result of the last check. Null until first checked. */
+  last_status: WaterCheckStatus | null;
 }
 
 /** Web Push subscription persisted for the morning cron. */

@@ -90,8 +90,15 @@ create table if not exists care_tasks (
   plant_id uuid not null references plants (id) on delete cascade,
   type text not null,                              -- water | rotate | prune | harvest | repot
   interval_days int not null,
-  last_done_at timestamptz,
+  last_done_at timestamptz,                        -- last actually watered/done
   next_due_at date not null,
+  -- Adaptive watering (migration 005). Only `water` uses these; other task
+  -- types leave them at defaults. Effective water interval =
+  -- round(species_seasonal_days * adjust_factor), clamped >= 1. Feedback tunes
+  -- the factor so each pot learns its own dry-out rhythm — see lib/care.ts.
+  adjust_factor real not null default 1.0,         -- >1 dries slower, <1 faster
+  last_checked_at timestamptz,                     -- last moisture check (may not have watered)
+  last_status text,                                -- 'watered' | 'moist' | null
   unique (plant_id, type)
 );
 

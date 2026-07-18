@@ -12,7 +12,10 @@
     "title": "Heute",
     "emptyTitle": "Noch nichts fällig",
     "emptyBody": "Füge deine erste Pflanze hinzu, und Sprout erstellt einen sanften Pflegeplan, damit du nie wieder das Gießen vergisst.",
-    "emptyCta": "Erste Pflanze hinzufügen"
+    "emptyCta": "Erste Pflanze hinzufügen",
+    "allCaughtUpTitle": "Alles erledigt 🌿",
+    "allCaughtUpBody": "Gerade braucht dich niemand. Sprout meldet sich, sobald wieder jemand dran ist.",
+    "allCaughtUpCta": "Garten ansehen"
   },
   "garden": {
     "eyebrowEmpty": "Deine Sammlung",
@@ -29,7 +32,16 @@
     "harvest": "Ernten",
     "prune": "Zurückschneiden",
     "overdueSuffix": " · überfällig",
-    "markDone": "{task} als erledigt markieren"
+    "markDone": "{task} als erledigt markieren",
+    "check": "Erde prüfen",
+    "waterTip": "Fühle die oberen ~5 cm Erde – nur gießen, wenn sie trocken ist.",
+    "watered": "Gegossen",
+    "stillMoist": "Noch feucht",
+    "lastMoist": "Beim letzten Mal war sie noch feucht.",
+    "howToCheckToggle": "Wie prüfe ich das?",
+    "howFinger": "Finger – bis zum zweiten Knöchel (~5 cm) hineinstecken. Kühl oder feucht? Warten. Trocken? Gießen.",
+    "howChopstick": "Stäbchen – hineinstecken, herausziehen. Kommt es sauber und trocken heraus, ist es Zeit.",
+    "howLift": "Topf anheben – leicht = trocken, schwer = noch feucht. Das Gewicht direkt nach dem Gießen merken."
   },
   "add": {
     "eyebrow": "Neuer Freund",

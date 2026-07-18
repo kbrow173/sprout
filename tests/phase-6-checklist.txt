@@ -1,0 +1,73 @@
+SPROUT — PHASE 6 REAL-WORLD TEST CHECKLIST
+(Adaptive, moisture-based watering. Watering is now a soil CHECK, not a
+calendar command, and each plant learns its own dry-out rhythm from your
+feedback. Test on your real phone/browser.)
+
+BEFORE YOU START — one setup step, required:
+  [ ] Run supabase/migration_005_adaptive_watering.sql in the Supabase SQL
+      editor. Until you do, the Today screen will 500 (the code now reads a
+      column that doesn't exist yet). It's idempotent — safe to run once.
+  [ ] After running it: open the app's Today screen and confirm it loads at
+      all (no error). If it errors, the migration didn't apply — re-run it.
+
+WATER CARD — LOOK & COPY (Today screen, needs a plant with a water task due):
+  [ ] A water reminder now says "Check soil", NOT "Water", with the plant name
+      above it.
+  [ ] Below it: a tip like "Feel the top 2" of soil — water only if it's dry."
+  [ ] Tap "How do I check?" — a guide expands with three methods (finger,
+      chopstick, lift-the-pot). Tap again — it collapses.
+  [ ] Two buttons at the bottom: "Still moist" (outline) and "Watered" (solid,
+      green, with a droplet). Non-water reminders (rotate/repot/harvest) still
+      show the single round check button — confirm those are unchanged.
+
+FEEDBACK LOOP — "STILL MOIST" (the core new behavior):
+  [ ] On a due water card, tap "Still moist".
+  [ ] The card disappears from Today (it's rescheduled, not marked watered).
+  [ ] Open that plant's care sheet. Under Watering, the expected interval
+      should have grown a little vs. the species baseline shown below it, and
+      you should see a line noting it was still moist / learning to wait longer.
+  [ ] Wait for it to come due again (or note the next-due is only a couple days
+      out, not a full cycle). Tap "Still moist" a few more times over days —
+      confirm the expected interval keeps stretching (it's learning this pot
+      dries slowly), but does NOT grow without limit.
+
+FEEDBACK LOOP — "WATERED":
+  [ ] On a due water card, tap "Watered". Card leaves Today.
+  [ ] Care sheet: the "last time it was still moist" note is gone; next water
+      check is scheduled a full (learned) interval out.
+  [ ] EARLY WATER: on the plant sheet, before the plant is due, tap
+      "I watered it just now". Confirm it returns you to the same plant page
+      and the expected interval TIGHTENS a bit (you watered early → Sprout
+      learns this pot dries faster).
+
+PLANT CARE SHEET — WATERING SECTION:
+  [ ] Watering section leads with "don't water on a clock — check the soil".
+  [ ] Shows "Sprout expects {plant} to get thirsty about every N days right
+      now" — and N reflects the current season (not a stale summer number in
+      winter).
+  [ ] Shows the species guide line (~Xd spring/summer, ~Yd fall/winter).
+  [ ] The how-to-check guide (finger / chopstick / lift) is always visible here.
+  [ ] "I watered it just now" button is present and works.
+
+EXISTING PLANTS (added before this update):
+  [ ] Any plant you added earlier should have its water check pulled in to
+      within ~2 days (so the learning loop starts soon), NOT still weeks out.
+      Confirm an old plant shows a water check due soon on Today.
+  [ ] A plant that was already overdue should stay at its earlier date, not get
+      pushed later.
+
+MORNING DIGEST (optional, if push/email set up):
+  [ ] Trigger the morning cron (or wait for it). In the email, water items read
+      "Check soil (water if dry)", not "Water".
+
+LANGUAGES (optional):
+  [ ] Switch app language (Settings) to Español / Deutsch / 한국어 and confirm
+      the water card's "Check soil", tip, guide, and both buttons are all
+      translated (not falling back to English).
+
+REGRESSION — make sure nothing else broke:
+  [ ] Add a new plant end-to-end — confirm it still creates its care tasks and
+      the first water reminder appears as a check.
+  [ ] Mark a rotate/repot/harvest task done — confirm the single-button flow
+      still reschedules it on its calendar interval as before.
+  [ ] Delete a plant — confirm its reminders disappear from Today.

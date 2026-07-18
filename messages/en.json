@@ -12,7 +12,10 @@
     "title": "Today",
     "emptyTitle": "Nothing due — yet",
     "emptyBody": "Add your first plant and Sprout will build a gentle care schedule so you never miss a watering.",
-    "emptyCta": "Add your first plant"
+    "emptyCta": "Add your first plant",
+    "allCaughtUpTitle": "All caught up 🌿",
+    "allCaughtUpBody": "Nothing needs you right now. Sprout will let you know when it's time to check on someone.",
+    "allCaughtUpCta": "Visit your garden"
   },
   "garden": {
     "eyebrowEmpty": "Your collection",
@@ -29,7 +32,16 @@
     "harvest": "Harvest",
     "prune": "Prune",
     "overdueSuffix": " · overdue",
-    "markDone": "Mark {task} done"
+    "markDone": "Mark {task} done",
+    "check": "Check soil",
+    "waterTip": "Feel the top 2″ of soil — water only if it's dry.",
+    "watered": "Watered",
+    "stillMoist": "Still moist",
+    "lastMoist": "Last time it was still moist.",
+    "howToCheckToggle": "How do I check?",
+    "howFinger": "Finger — poke to your second knuckle (~2″). Cool or damp? Wait. Dry? Water.",
+    "howChopstick": "Chopstick — push in, pull out. Comes out clean and dry means it's time.",
+    "howLift": "Lift the pot — light = dry, heavy = still wet. Learn the feel right after watering."
   },
   "add": {
     "eyebrow": "New friend",

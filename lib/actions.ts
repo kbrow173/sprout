@@ -5,10 +5,10 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { serverClient } from "@/lib/supabase";
 import { getSpeciesById } from "@/lib/species";
-import { generateCareTasksForPlant, markCareTaskDone } from "@/lib/care";
+import { generateCareTasksForPlant, markCareTaskDone, recordWaterCheck } from "@/lib/care";
 import { getSettings } from "@/lib/settings";
 import { LOCALE_COOKIE, LOCALES, DEFAULT_LOCALE } from "@/i18n/request";
-import type { Locale } from "@/lib/types";
+import type { Locale, WaterCheckStatus } from "@/lib/types";
 
 /**
  * Manual add-a-plant flow (Phase 1 stand-in for the Phase 2 camera flow — and
@@ -131,6 +131,34 @@ export async function markCareTaskDoneAction(formData: FormData): Promise<void> 
   await markCareTaskDone(taskId);
 
   revalidatePath("/");
+}
+
+/**
+ * Records a moisture check on a water task (the two-button "Watered" /
+ * "Still moist" flow, and the plant page's off-schedule "Log watering").
+ * `status` is validated rather than trusted so a malformed form can't write a
+ * junk `last_status`. `redirect_to` lets the plant page bounce back to itself.
+ */
+export async function recordWaterCheckAction(formData: FormData): Promise<void> {
+  const taskId = String(formData.get("task_id") ?? "");
+  if (!taskId) throw new Error("Missing task id.");
+
+  const rawStatus = String(formData.get("status") ?? "");
+  if (rawStatus !== "watered" && rawStatus !== "moist") {
+    throw new Error("Invalid water-check status.");
+  }
+  const status: WaterCheckStatus = rawStatus;
+
+  await recordWaterCheck(taskId, status);
+
+  revalidatePath("/");
+  const redirectTo = String(formData.get("redirect_to") ?? "").trim();
+  // Only same-origin app paths — never trust an arbitrary redirect target from
+  // a form field (open-redirect guard), even in a single-user app.
+  if (redirectTo.startsWith("/") && !redirectTo.startsWith("//")) {
+    revalidatePath(redirectTo);
+    redirect(redirectTo);
+  }
 }
 
 function isValidTimezone(tz: string): boolean {

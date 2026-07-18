@@ -382,3 +382,34 @@ inaccurate, and the plant illustrations read as too abstract/generic.
     blank confirm button (now filtered).
   - Logged as L19 in `LESSONS_LEARNED.md`.
 - ✅ Real-world test checklist: `tests/phase-5-checklist.txt`
+
+## Phase 6 — Adaptive Moisture-Based Watering  🟡 code complete, ⚠️ 1 migration before it's live
+Motivation: user (correctly) flagged that fixed-calendar watering is
+horticulturally wrong — soil moisture, not a date, decides when to water, and
+calendar watering overwaters (the #1 houseplant killer). Research confirmed the
+hybrid model: the schedule reminds you to *check*; the finger/chopstick/lift
+test decides. Scope agreed with user = "full adaptive" (learns each pot's
+rhythm) + two-button feedback + expandable how-to-check on the card.
+Done:
+- ✅ `migration_005_adaptive_watering.sql`: `care_tasks.adjust_factor`,
+  `last_checked_at`, `last_status`; pulls existing water tasks in to re-check
+  within ~2 days. Folded into `schema.sql`. **⚠️ not yet run on live DB — the
+  Today screen 500s until it is** (`getDueTasks` selects `last_status`).
+- ✅ `lib/care.ts`: water interval = `round(seasonal_days × adjust_factor)`
+  clamped 0.5–2.5; `recordWaterCheck` feedback loop (moist→grow + re-check
+  soon; watered-early→shrink; on-time→hold); `getWaterTaskForPlant` +
+  `expectedWaterIntervalDays` (live current-season estimate).
+- ✅ `recordWaterCheckAction` (validated status, open-redirect-guarded
+  `redirect_to`); `ReminderCard` water cards (check label + tip + expandable
+  finger/chopstick/lift guide + "Still moist"/"Watered" buttons); plant sheet
+  watering section reframed check-first + "I watered it just now"; email water
+  row now "Check soil (water if dry)"; new `reminderCard` keys in en/es/de/ko.
+- ✅ `npx tsc --noEmit`, `eslint`, and `next build` all clean.
+- ✅ Edge Case Destroyer pass (self): factor runaway (clamped), open-redirect
+  on `redirect_to` (guarded), concurrent delete (no-op via `loadTaskContext`),
+  interval floor ≥1 day, existing-plant pull-in never pushes an overdue task
+  later (`least(...)`). Fixed a stale-display bug (plant sheet showed the
+  persisted `interval_days` as "now" — now recomputed live). Logged L21 + L22.
+- ✅ Real-world test checklist: `tests/phase-6-checklist.txt`
+- ⏳ Live browser verification blocked on the migration (user step); user tests
+  on device after running it.

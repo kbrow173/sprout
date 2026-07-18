@@ -12,7 +12,10 @@
     "title": "Hoy",
     "emptyTitle": "Nada pendiente — por ahora",
     "emptyBody": "Añade tu primera planta y Sprout creará un calendario de cuidados para que nunca se te olvide regarla.",
-    "emptyCta": "Añade tu primera planta"
+    "emptyCta": "Añade tu primera planta",
+    "allCaughtUpTitle": "Todo al día 🌿",
+    "allCaughtUpBody": "Nada necesita tu atención ahora mismo. Sprout te avisará cuando toque revisar a alguien.",
+    "allCaughtUpCta": "Ver tu jardín"
   },
   "garden": {
     "eyebrowEmpty": "Tu colección",
@@ -29,7 +32,16 @@
     "harvest": "Cosechar",
     "prune": "Podar",
     "overdueSuffix": " · atrasado",
-    "markDone": "Marcar {task} como hecho"
+    "markDone": "Marcar {task} como hecho",
+    "check": "Revisar tierra",
+    "waterTip": "Toca los primeros 5 cm de tierra: riega solo si está seca.",
+    "watered": "Regada",
+    "stillMoist": "Aún húmeda",
+    "lastMoist": "La última vez seguía húmeda.",
+    "howToCheckToggle": "¿Cómo lo compruebo?",
+    "howFinger": "Dedo: introdúcelo hasta el segundo nudillo (~5 cm). ¿Fresco o húmedo? Espera. ¿Seco? Riega.",
+    "howChopstick": "Palillo: mételo y sácalo. Si sale limpio y seco, es hora de regar.",
+    "howLift": "Levanta la maceta: ligera = seca, pesada = aún húmeda. Aprende el peso justo después de regar."
   },
   "add": {
     "eyebrow": "Nueva amiga",

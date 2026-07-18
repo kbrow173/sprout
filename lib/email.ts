@@ -3,7 +3,7 @@ import { Resend } from "resend";
 import type { DueTask } from "@/lib/care";
 
 const TASK_LABELS: Record<string, string> = {
-  water: "Water",
+  water: "Check soil (water if dry)", // moisture-first, not a blind "Water" command
   rotate: "Rotate",
   repot: "Repot",
   harvest: "Harvest",

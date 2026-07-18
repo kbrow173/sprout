@@ -18,7 +18,8 @@ import PlantIllustration from "@/components/PlantIllustration";
 import CareSection from "@/components/CareSection";
 import DeleteButton from "@/components/DeleteButton";
 import { getPlantWithCare } from "@/lib/plants";
-import { deletePlantAction } from "@/lib/actions";
+import { getWaterTaskForPlant, expectedWaterIntervalDays } from "@/lib/care";
+import { deletePlantAction, recordWaterCheckAction } from "@/lib/actions";
 
 // A plant's care sheet reflects live DB state (e.g. right after adding it).
 export const dynamic = "force-dynamic";
@@ -46,6 +47,13 @@ export default async function PlantPage({
 
   const care = plant.species_care;
   const displayName = plant.nickname || plant.common_name;
+  const waterTask = await getWaterTaskForPlant(id);
+  // What Sprout currently expects for THIS pot — computed live from the current
+  // season + learned factor, so it's right even between checks. Falls back to
+  // the species' summer baseline for a plant with no water task yet.
+  const expectedDays = waterTask
+    ? await expectedWaterIntervalDays(care, waterTask.adjust_factor)
+    : care.water_days_summer;
 
   return (
     <>
@@ -78,9 +86,43 @@ export default async function PlantPage({
       {/* Care sheet */}
       <div className="space-y-3">
         <CareSection icon={<Droplets className="size-4 text-sky-500" strokeWidth={2.2} />} title="Watering">
-          Every <strong className="text-ink">{care.water_days_summer} days</strong> in the growing
-          season (spring/summer), stretching to every{" "}
-          <strong className="text-ink">{care.water_days_winter} days</strong> in fall/winter.
+          <p>
+            Don&apos;t water on a clock — <strong className="text-ink">check the soil first</strong>{" "}
+            and water only when the top ~2&quot; is dry.
+          </p>
+          <p className="mt-1.5">
+            Sprout expects <strong className="text-ink">{displayName}</strong> to get thirsty about
+            every <strong className="text-ink">{expectedDays} days</strong> right now, and tunes that
+            each time you check.
+            {waterTask?.last_status === "moist" ? (
+              <span className="text-forest-700"> Last check it was still moist, so it&apos;s learning to wait longer.</span>
+            ) : null}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Species guide: ~{care.water_days_summer}d in spring/summer, ~{care.water_days_winter}d in
+            fall/winter.
+          </p>
+
+          <div className="mt-3 space-y-1.5 rounded-2xl bg-sprout-100/70 px-3 py-2.5 text-xs leading-relaxed text-ink">
+            <p className="font-bold text-forest-800">How to check moisture</p>
+            <p><strong>Finger</strong> — poke to your second knuckle (~2&quot;). Cool or damp? Wait. Dry? Water.</p>
+            <p><strong>Chopstick</strong> — push in, pull out. Comes out clean and dry means it&apos;s time.</p>
+            <p><strong>Lift the pot</strong> — light = dry, heavy = still wet. Learn the feel right after watering.</p>
+          </div>
+
+          {waterTask ? (
+            <form action={recordWaterCheckAction} className="mt-3">
+              <input type="hidden" name="task_id" value={waterTask.id} />
+              <input type="hidden" name="status" value="watered" />
+              <input type="hidden" name="redirect_to" value={`/plant/${plant.id}`} />
+              <button
+                type="submit"
+                className="flex w-full items-center justify-center gap-1.5 rounded-full bg-forest-700 px-3 py-2 text-sm font-bold text-white shadow-soft transition-transform active:scale-95"
+              >
+                <Droplets className="size-4" strokeWidth={2.6} /> I watered it just now
+              </button>
+            </form>
+          ) : null}
         </CareSection>
 
         <CareSection icon={<Sun className="size-4 text-sun-500" strokeWidth={2.2} />} title="Light">

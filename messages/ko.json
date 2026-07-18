@@ -12,7 +12,10 @@
     "title": "오늘",
     "emptyTitle": "아직 할 일이 없어요",
     "emptyBody": "첫 식물을 추가하면 Sprout가 물 주는 걸 절대 잊지 않도록 부드러운 관리 일정을 만들어 드려요.",
-    "emptyCta": "첫 식물 추가하기"
+    "emptyCta": "첫 식물 추가하기",
+    "allCaughtUpTitle": "모두 잘 지내고 있어요 🌿",
+    "allCaughtUpBody": "지금은 아무것도 필요하지 않아요. 확인할 때가 되면 Sprout가 알려드릴게요.",
+    "allCaughtUpCta": "정원 보기"
   },
   "garden": {
     "eyebrowEmpty": "내 컬렉션",
@@ -29,7 +32,16 @@
     "harvest": "수확",
     "prune": "가지치기",
     "overdueSuffix": " · 기한 지남",
-    "markDone": "{task} 완료로 표시"
+    "markDone": "{task} 완료로 표시",
+    "check": "흙 확인",
+    "waterTip": "흙 위 5cm를 만져 보세요 — 마른 경우에만 물을 주세요.",
+    "watered": "물 줬어요",
+    "stillMoist": "아직 촉촉해요",
+    "lastMoist": "지난번엔 아직 촉촉했어요.",
+    "howToCheckToggle": "어떻게 확인하나요?",
+    "howFinger": "손가락 — 두 번째 마디까지(약 5cm) 넣어 보세요. 시원하거나 촉촉하면 기다리고, 마르면 물을 주세요.",
+    "howChopstick": "나무젓가락 — 꽂았다 빼 보세요. 깨끗하고 마른 채로 나오면 물 줄 때예요.",
+    "howLift": "화분 들기 — 가벼우면 건조, 무거우면 아직 촉촉. 물 준 직후 무게를 기억해 두세요."
   },
   "add": {
     "eyebrow": "새 친구",

@@ -324,3 +324,41 @@ handling too, not just its markup — the existing field's guard is often
 there *because* of a bug already found once. This is a small version of
 L17 (two toggles must share the same base + transform) for selects instead
 of toggles: near-identical UI controls need near-identical defensiveness.
+
+## L21 — Watering must be moisture-driven, not calendar-driven (design bug, not a crash)
+**Context:** The original reminder engine fired "Water {plant}" every
+`water_days_summer`/`winter` days on a fixed calendar and blindly re-added the
+same interval on mark-done. Horticulturally this is wrong: soil moisture — not
+a date — decides when to water, and calendar watering *overwaters*, the #1
+houseplant killer. The user caught it ("you shouldn't water on a calendar…
+check moisture"). Research (extension services, houseplant guides) confirmed the
+correct model is a **hybrid**: the schedule only reminds you to *check*; the
+finger/chopstick/lift-pot test decides whether to actually water.
+**Decision:** Reframed water tasks from a command to a check. Added
+`care_tasks.adjust_factor` — effective interval = `round(seasonal_days ×
+factor)`, clamped 0.5–2.5. Two-button feedback (`recordWaterCheck`): "still
+moist" grows the factor + re-checks soon; "watered early" shrinks it; on-time
+holds. Each pot converges on its real dry-out rhythm while seasonal switching
+still works (the base days the factor multiplies still change with season).
+Rotate/repot/harvest stay pure calendar — they genuinely are time-based.
+**Prevention:** A feature can be fully "working" (no bug, passes tests) and
+still be *domain-wrong*. Before modelling a real-world process on a timer, ask
+whether the real practitioners do it on a timer — for watering, gardeners
+explicitly say not to. Domain research belongs in the planning step, not after
+the user pushes back. Also: monotonic drift is unsafe — the moist→grow signal
+needed a symmetric watered-early→shrink signal and hard clamps so the learned
+interval can't ratchet to infinity (or collapse to zero).
+
+## L22 — A learned/derived value shown in the UI must be recomputed for "now", not read from a stale store
+**Context:** In the adaptive-watering plant sheet, the first pass showed
+`care_tasks.interval_days` as "Sprout expects ~N days right now". But
+`interval_days` is only rewritten when a check is logged, so a plant last
+checked in summer would keep showing the summer cadence deep into winter — the
+word "now" would be a lie until the next check.
+**Decision:** Added `expectedWaterIntervalDays(species, factor)` that recomputes
+from the *current* season + stored factor at render time; the stored
+`interval_days` is kept only for the scheduling math, not for display.
+**Prevention:** If UI copy says "now"/"currently", derive the number at render
+from live inputs. A persisted derived column is a cache — fine for driving the
+next scheduled event, but don't surface it as the present-tense truth without
+recomputing.
