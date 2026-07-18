@@ -102,8 +102,8 @@ export default function PushSubscribeButton({ initialEnabled }: { initialEnabled
       }`}
     >
       <span
-        className={`absolute top-0.5 size-6 rounded-full bg-white shadow-soft transition-transform ${
-          enabled ? "translate-x-5" : "translate-x-0.5"
+        className={`absolute top-0.5 left-0.5 size-6 rounded-full bg-white shadow-soft transition-transform ${
+          enabled ? "translate-x-5" : ""
         }`}
       />
     </button>

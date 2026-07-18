@@ -9,6 +9,9 @@ export type LightLevel = "low" | "medium" | "bright";
 export type Difficulty = "easy" | "medium" | "fussy";
 export type CareTaskType = "water" | "rotate" | "prune" | "harvest" | "repot";
 export type ProfileSource = "seed" | "claude";
+export type Locale = "en" | "es" | "de" | "ko";
+/** Locales that need translation — species_care itself already IS English. */
+export type NonEnglishLocale = Exclude<Locale, "en">;
 
 /** A care profile for a species — the source of truth for care logic. */
 export interface SpeciesCare {
@@ -40,6 +43,29 @@ export interface SpeciesCare {
   source: ProfileSource;
   created_at: string;
 }
+
+/** Cached Claude translation of a species' free-text fields into one locale. */
+export interface SpeciesCareTranslation {
+  id: string;
+  species_care_id: string;
+  locale: NonEnglishLocale;
+  common_name: string;
+  humidity: string;
+  soil_recommendation: string;
+  toxicity: string;
+  propagation: string;
+  pruning: string;
+  harvesting: string | null;
+  dos: string[];
+  donts: string[];
+  created_at: string;
+}
+
+/** The translatable subset of fields, shared between SpeciesCare and its translations. */
+export type TranslatableCareFields = Pick<
+  SpeciesCare,
+  "common_name" | "humidity" | "soil_recommendation" | "toxicity" | "propagation" | "pruning" | "harvesting" | "dos" | "donts"
+>;
 
 /** A plant in the user's garden. */
 export interface Plant {
@@ -89,15 +115,18 @@ export interface Settings {
   email_enabled: boolean;
   /** Local date (in `timezone`) the morning digest last ran — dedupe guard. */
   last_morning_send_date: string | null;
+  language: Locale;
 }
 
 /** Shape returned by the Claude vision identify endpoint. */
 export interface IdentifyResult {
   common_name: string;
   scientific_name: string;
+  /** One short sentence on the visible features the ID was based on — shown as a sanity check. */
+  key_features: string;
   /** 0–1 model confidence. */
   confidence: number;
-  /** Up to 2 alternates when the model isn't sure. */
+  /** Up to 2 alternates — populated whenever a plausible look-alike exists, not just when uncertain. */
   candidates: { common_name: string; scientific_name: string }[];
   /** True when we should ask the user to confirm which candidate. */
   uncertain: boolean;

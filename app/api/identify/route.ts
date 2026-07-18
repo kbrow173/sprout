@@ -8,8 +8,14 @@ const MAX_BYTES = 8 * 1024 * 1024; // 8MB
 // to JPEG on upload for <input type=file>, so this covers what actually arrives.
 type SupportedMediaType = "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 const ALLOWED_TYPES = new Set<SupportedMediaType>(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-/** Below this, ask the user to confirm which candidate it is. */
-const CONFIDENCE_THRESHOLD = 0.75;
+/**
+ * Below this, ask the user to confirm which candidate it is. Set above the
+ * "confident but a look-alike can't be fully ruled out" band (see the
+ * confidence anchors in identifyPlant's tool schema) so a merely-plausible
+ * guess gets a one-tap confirmation instead of silently setting the wrong
+ * care schedule; genuinely distinctive plants (0.9+) still auto-confirm.
+ */
+const CONFIDENCE_THRESHOLD = 0.85;
 
 /**
  * Sniffs the actual file signature instead of trusting the client-declared

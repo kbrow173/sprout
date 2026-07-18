@@ -264,12 +264,17 @@ function ConfirmStep({
   onRetake: () => void;
   onGiveUp: () => void;
 }) {
-  if (!result.uncertain) {
+  const [showAlternates, setShowAlternates] = useState(false);
+
+  if (!result.uncertain && !showAlternates) {
     return (
       <div className="animate-pop rounded-3xl border border-line bg-surface px-5 py-6 text-center shadow-soft">
         <p className="text-xs font-bold tracking-wide text-sprout-600 uppercase">Looks like…</p>
         <h2 className="mt-1 text-2xl font-bold text-forest-800">{result.common_name}</h2>
         <p className="text-sm text-muted italic">{result.scientific_name}</p>
+        {result.key_features ? (
+          <p className="mx-auto mt-3 max-w-[19rem] text-xs leading-relaxed text-muted">{result.key_features}</p>
+        ) : null}
         <div className="mt-5 flex justify-center gap-2">
           <button
             type="button"
@@ -281,10 +286,10 @@ function ConfirmStep({
         </div>
         <button
           type="button"
-          onClick={onRetake}
+          onClick={() => (result.candidates.length > 0 ? setShowAlternates(true) : onRetake())}
           className="mt-3 text-xs font-semibold text-muted underline underline-offset-2"
         >
-          Not quite — retake photo
+          {result.candidates.length > 0 ? "Not quite — see other options" : "Not quite — retake photo"}
         </button>
       </div>
     );
@@ -298,7 +303,7 @@ function ConfirmStep({
   return (
     <div className="animate-pop space-y-3">
       <p className="text-center text-sm font-semibold text-muted">
-        Not 100% sure — which one looks right?
+        {result.uncertain ? "Not 100% sure — which one looks right?" : "Which one looks right?"}
       </p>
       {options.map((opt, i) => (
         <button
@@ -311,12 +316,19 @@ function ConfirmStep({
           <span className="text-xs text-muted italic">{opt.scientific_name}</span>
         </button>
       ))}
+      <button
+        type="button"
+        onClick={onRetake}
+        className="block w-full text-center text-xs font-semibold text-muted underline underline-offset-2"
+      >
+        None of these — retake photo
+      </button>
       <Link
         href="/add/manual"
         onClick={onGiveUp}
         className="block text-center text-xs font-semibold text-muted underline underline-offset-2"
       >
-        None of these — search manually
+        Search manually instead
       </Link>
     </div>
   );

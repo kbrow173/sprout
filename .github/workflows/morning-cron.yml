@@ -15,5 +15,17 @@ jobs:
     steps:
       - name: Call /api/cron/morning
         run: |
-          curl -sf -X POST "${{ secrets.APP_URL }}/api/cron/morning" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          if [ -z "${{ secrets.APP_URL }}" ] || [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::APP_URL and/or CRON_SECRET repo secrets are not set (repo Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          http_code=$(curl -sS -o /tmp/cron-response.json -w "%{http_code}" -X POST \
+            "${{ secrets.APP_URL }}/api/cron/morning" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "HTTP $http_code"
+          cat /tmp/cron-response.json
+          echo
+          if [ "$http_code" -ge 400 ]; then
+            echo "::error::/api/cron/morning returned HTTP $http_code — see response body above."
+            exit 1
+          fi

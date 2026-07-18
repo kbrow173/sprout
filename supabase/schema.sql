@@ -37,6 +37,32 @@ create index if not exists species_care_scientific_idx
   on species_care (lower(scientific_name));
 
 -- ---------------------------------------------------------------------------
+-- species_care_translations: on-demand Claude-translated cache of a species'
+-- free-text care fields into a non-English UI language. species_care itself
+-- stays the single canonical (English) source — this is purely an additive
+-- cache, one row per (species, locale), populated the first time that
+-- species' care sheet is viewed in that language. Numeric/enum fields
+-- (difficulty, light, *_days, *_months, illustration_key) aren't language-
+-- dependent and are never duplicated here.
+-- ---------------------------------------------------------------------------
+create table if not exists species_care_translations (
+  id uuid primary key default gen_random_uuid(),
+  species_care_id uuid not null references species_care (id) on delete cascade,
+  locale text not null,                            -- es | de | ko (never 'en' — that's species_care itself)
+  common_name text not null,
+  humidity text not null,
+  soil_recommendation text not null,
+  toxicity text not null,
+  propagation text not null,
+  pruning text not null,
+  harvesting text,
+  dos jsonb not null default '[]'::jsonb,
+  donts jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  unique (species_care_id, locale)
+);
+
+-- ---------------------------------------------------------------------------
 -- plants: entries in the user's garden.
 -- ---------------------------------------------------------------------------
 create table if not exists plants (
@@ -95,7 +121,10 @@ create table if not exists settings (
   -- Local date (in `timezone`) the morning digest last ran. Guards against a
   -- duplicate send if the GitHub Actions cron is retried/re-run within the
   -- same target hour.
-  last_morning_send_date date
+  last_morning_send_date date,
+  -- UI language: en | es | de | ko. Cookie is the runtime source (no URL
+  -- prefix); this column is the persisted/synced copy.
+  language text not null default 'en'
 );
 
 insert into settings (morning_time, timezone)

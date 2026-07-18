@@ -1,26 +1,32 @@
 import { Sprout } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ReminderCard from "@/components/ReminderCard";
-import { getDueTasks } from "@/lib/care";
+import { getDueTasks, currentLocalDateAndHour } from "@/lib/care";
+import { getSettings } from "@/lib/settings";
 
 // Due tasks change constantly (mark-done, new plants) — always fetch live.
 export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
-  const tasks = await getDueTasks();
+  const [tasks, settings, t] = await Promise.all([
+    getDueTasks(),
+    getSettings(),
+    getTranslations("today"),
+  ]);
 
   return (
     <>
-      <PageHeader eyebrow={greeting()} title="Today" />
+      <PageHeader eyebrow={greeting(settings.timezone, t)} title={t("title")} />
 
       {tasks.length === 0 ? (
         <EmptyState
           illustration={<Sprout className="size-11 text-sprout-600" strokeWidth={2} />}
-          title="Nothing due — yet"
-          body="Add your first plant and Sprout will build a gentle care schedule so you never miss a watering."
+          title={t("emptyTitle")}
+          body={t("emptyBody")}
           ctaHref="/add"
-          ctaLabel="Add your first plant"
+          ctaLabel={t("emptyCta")}
         />
       ) : (
         <div className="space-y-2.5">
@@ -33,9 +39,11 @@ export default async function TodayPage() {
   );
 }
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning 🌿";
-  if (h < 18) return "Good afternoon ☀️";
-  return "Good evening 🌙";
+// Local hour (not server-runtime UTC — see LESSONS_LEARNED.md L11) decides
+// which of the three greetings to show.
+function greeting(timezone: string, t: Awaited<ReturnType<typeof getTranslations>>): string {
+  const { hour } = currentLocalDateAndHour(timezone);
+  if (hour < 12) return t("greetingMorning");
+  if (hour < 18) return t("greetingAfternoon");
+  return t("greetingEvening");
 }

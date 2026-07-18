@@ -2,23 +2,26 @@
 
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
+import { useTranslations } from "next-intl";
 import { Check, Droplet, Package, RotateCw, Scissors } from "lucide-react";
 import PlantIllustration from "@/components/PlantIllustration";
 import { markCareTaskDoneAction } from "@/lib/actions";
 import type { DueTask } from "@/lib/care";
 import type { CareTaskType } from "@/lib/types";
 
-const TASK_META: Record<CareTaskType, { label: string; icon: typeof Droplet }> = {
-  water: { label: "Water", icon: Droplet },
-  rotate: { label: "Rotate", icon: RotateCw },
-  repot: { label: "Repot", icon: Package },
-  harvest: { label: "Harvest", icon: Scissors },
-  prune: { label: "Prune", icon: Scissors },
+const TASK_ICON: Record<CareTaskType, typeof Droplet> = {
+  water: Droplet,
+  rotate: RotateCw,
+  repot: Package,
+  harvest: Scissors,
+  prune: Scissors,
 };
 
 /** A single due-today (or overdue) care task, with a one-tap mark-done. */
 export default function ReminderCard({ task }: { task: DueTask }) {
-  const { label, icon: Icon } = TASK_META[task.type];
+  const t = useTranslations("reminderCard");
+  const Icon = TASK_ICON[task.type];
+  const label = t(task.type);
 
   return (
     <div className="animate-pop flex items-center gap-3 rounded-3xl border border-line bg-surface px-4 py-3 shadow-soft">
@@ -37,26 +40,26 @@ export default function ReminderCard({ task }: { task: DueTask }) {
           >
             <Icon className="size-3.5" strokeWidth={2.4} />
             {label}
-            {task.overdue ? " · overdue" : ""}
+            {task.overdue ? t("overdueSuffix") : ""}
           </p>
         </div>
       </Link>
 
       <form action={markCareTaskDoneAction}>
         <input type="hidden" name="task_id" value={task.id} />
-        <MarkDoneButton label={label} />
+        <MarkDoneButton markDoneLabel={t("markDone", { task: label })} />
       </form>
     </div>
   );
 }
 
-function MarkDoneButton({ label }: { label: string }) {
+function MarkDoneButton({ markDoneLabel }: { markDoneLabel: string }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      aria-label={`Mark ${label.toLowerCase()} done`}
+      aria-label={markDoneLabel}
       className="flex size-10 shrink-0 items-center justify-center rounded-full bg-forest-700 text-white shadow-soft transition-transform active:scale-90 disabled:opacity-50"
     >
       <Check className="size-5" strokeWidth={2.6} />

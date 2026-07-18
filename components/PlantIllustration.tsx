@@ -2,11 +2,19 @@
  * Curated SVG plant illustration library. Every plant in the garden renders
  * as one of these flat, friendly variants (never the raw photo) — fast,
  * consistent, works offline, and is the cleanest surface for a later Claude
- * Design pass (just swap the <LeavesForKey> paths, the pot stays put).
+ * Design pass (just swap the <Leaves> paths, the pot stays put).
  *
  * illustration_key values are set at seed time (supabase/seed.sql) and copied
  * onto each `plants` row so a plant keeps its look even if the species record
  * changes. Unknown keys fall back to "generic".
+ *
+ * Each variant is built from a handful of reusable local-coordinate leaf
+ * units (HeartLeaf, Blade, Coin, Pearl, Petal, Pinna, ...) placed via
+ * `transform="translate(x,y) rotate(r) scale(s)"` — translate moves the
+ * unit's own origin into place, rotate/scale apply around that same origin
+ * first. The pot renders *before* the leaves (not after) so trailing/draping
+ * foliage — string-of-pearls strands, a succulent rosette resting on the rim,
+ * a vine's crown — can overlap the rim without being clipped by it.
  */
 
 export type IllustrationKey =
@@ -25,23 +33,115 @@ export type IllustrationKey =
   | "fern"
   | "generic";
 
-const FOREST = "#1f5b39";
+const FOREST_800 = "#17422a";
+const FOREST_700 = "#1f5b39";
+const FOREST_600 = "#2b7a4b";
+const FOREST_500 = "#379a5f";
 const SPROUT_600 = "#46b26a";
 const SPROUT_500 = "#62c47d";
 const SPROUT_400 = "#8ad79c";
-const SPROUT_300 = "#b6e7c1";
+const SPROUT_200 = "#dcf4e1";
 const BLOOM = "#f2765e";
+const BLOOM_LIGHT = "#f6a08e";
 const SUN = "#f5b545";
+
+type Placed = { fill: string; transform: string };
+
+/** A trailing heart-leaf (pothos/philodendron) — tip points down, notch up. */
+function HeartLeaf({ fill, transform }: Placed) {
+  return (
+    <g transform={transform}>
+      <path
+        d="M0,-4 C-6,-12 -12,-6 -11,2 C-10,10 -4,14 0,19 C4,14 10,10 11,2 C12,-6 6,-12 0,-4 Z"
+        fill={fill}
+      />
+      <path d="M-3,-3 C-6,1 -5,5 -2,8" fill="none" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+    </g>
+  );
+}
+
+/** A narrow tapered sword leaf (snake plant, spider plant, palm leaflet), growing up from its base. */
+function Blade({ fill, transform }: Placed) {
+  return (
+    <path
+      d="M0,0 C-6,-8 -7,-24 -3,-38 C-1,-45 0,-48 0,-48 C1,-44 4,-36 6,-24 C8,-10 5,-4 0,0 Z"
+      fill={fill}
+      transform={transform}
+    />
+  );
+}
+
+/** A broader pointed leaf (broadleaf, fiddle-leaf fig, orchid strap leaves, generic). */
+function WideBlade({ fill, transform }: Placed) {
+  return (
+    <path
+      d="M0,0 C-11,-8 -13,-26 -7,-44 C-4,-52 0,-56 0,-56 C0,-56 4,-52 7,-44 C13,-26 11,-8 0,0 Z"
+      fill={fill}
+      transform={transform}
+    />
+  );
+}
+
+/** A round coin leaf (Chinese money plant) with a baked-in gloss highlight. */
+function Coin({ fill, transform }: Placed) {
+  return (
+    <g transform={transform}>
+      <path d="M0,-14 C9,-14 14,-7 14,0 C14,8 8,14 0,14 C-9,14 -14,7 -14,0 C-14,-8 -8,-14 0,-14 Z" fill={fill} />
+      <ellipse cx="-4" cy="-4" rx="4.5" ry="3.5" fill="#ffffff" opacity="0.3" />
+    </g>
+  );
+}
+
+/** A single string-of-pearls bead with a gloss dot. */
+function Pearl({ fill, transform }: Placed) {
+  return (
+    <g transform={transform}>
+      <circle r="4.6" fill={fill} />
+      <circle cx="-1.4" cy="-1.4" r="1.4" fill="#ffffff" opacity="0.5" />
+    </g>
+  );
+}
+
+/** A short teardrop petal, base at the origin — succulent rosette leaves. */
+function Petal({ fill, transform }: Placed) {
+  return (
+    <path
+      d="M0,0 C-5,-3 -5,-11 -2,-17 C-1,-19 0,-20 0,-20 C0,-20 1,-19 2,-17 C5,-11 5,-3 0,0 Z"
+      fill={fill}
+      transform={transform}
+    />
+  );
+}
+
+/** A tiny fern leaflet. */
+function Pinna({ fill, transform }: Placed) {
+  return <ellipse rx="4.2" ry="2.1" fill={fill} transform={transform} />;
+}
+
+/** A small pointed herb leaflet, base at the origin. */
+function HerbUnit({ fill, transform }: Placed) {
+  return (
+    <path
+      d="M0,0 C-6,-3 -8,-10 -4,-15 C-2,-17 0,-18 0,-18 C0,-18 2,-17 4,-15 C8,-10 6,-3 0,0 Z"
+      fill={fill}
+      transform={transform}
+    />
+  );
+}
+
+/** One elongated orchid petal, arranged radially around a bloom center. */
+function OrchidPetal({ fill, transform }: Placed) {
+  return <ellipse rx="4.5" ry="8" cy="-6" fill={fill} transform={transform} />;
+}
 
 function Pot() {
   return (
     <g>
-      <ellipse cx="80" cy="146" rx="34" ry="6" fill="#000000" opacity="0.06" />
-      <path
-        d="M52 100h56l-6 40a10 10 0 0 1-9.9 8.6H67.9A10 10 0 0 1 58 140l-6-40Z"
-        fill="#ffffff"
-      />
-      <rect x="47" y="90" width="66" height="14" rx="7" fill="#eef9f0" />
+      <ellipse cx="80" cy="147" rx="33" ry="6" fill="#000000" opacity="0.06" />
+      <path d="M51 99c-2 15-3 30 2 40a11 11 0 0 0 9.9 6h34.2A11 11 0 0 0 107 139c5-10 4-25 2-40Z" fill="#ffffff" />
+      <path d="M51 99c-2 15-3 30 2 40a11 11 0 0 0 5 5.4C54 132 53 115 56 99Z" fill="#eef9f0" opacity="0.8" />
+      <rect x="46" y="88" width="68" height="15" rx="7.5" fill="#eef9f0" />
+      <rect x="46" y="88" width="68" height="6" rx="3" fill="#ffffff" />
     </g>
   );
 }
@@ -51,219 +151,268 @@ function Leaves({ variant }: { variant: IllustrationKey }) {
     case "vine":
       return (
         <g>
-          <path
-            d="M80 96C58 108 44 128 40 148"
-            stroke={SPROUT_600}
-            strokeWidth="4"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <ellipse cx="66" cy="112" rx="9" ry="6.5" fill={SPROUT_500} transform="rotate(-30 66 112)" />
-          <ellipse cx="52" cy="128" rx="9" ry="6.5" fill={SPROUT_400} transform="rotate(-45 52 128)" />
-          <ellipse cx="42" cy="146" rx="8" ry="6" fill={SPROUT_300} transform="rotate(-55 42 146)" />
-          <path
-            d="M80 96C100 106 116 124 121 146"
-            stroke={SPROUT_600}
-            strokeWidth="4"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <ellipse cx="94" cy="110" rx="9" ry="6.5" fill={SPROUT_500} transform="rotate(30 94 110)" />
-          <ellipse cx="109" cy="126" rx="9" ry="6.5" fill={SPROUT_400} transform="rotate(45 109 126)" />
-          <ellipse cx="118" cy="144" rx="8" ry="6" fill={SPROUT_300} transform="rotate(55 118 144)" />
-          <path d="M80 100V76" stroke={FOREST} strokeWidth="4" strokeLinecap="round" />
-          <path d="M80 76c-12-10-30-10-38 0 10 16 28 16 38 0Z" fill={SPROUT_500} />
-          <path d="M80 76c12-8 28-6 34 4-9 14-25 12-34-4Z" fill={SPROUT_600} />
+          <path d="M78 92C60 100 44 118 37 146" stroke={FOREST_600} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          <path d="M82 92C100 100 116 118 123 146" stroke={FOREST_600} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          <HeartLeaf fill={SPROUT_600} transform="translate(66,104) rotate(-12) scale(1.3)" />
+          <HeartLeaf fill={SPROUT_500} transform="translate(50,124) rotate(-22) scale(1.1)" />
+          <HeartLeaf fill={SPROUT_400} transform="translate(40,144) rotate(-30) scale(0.9)" />
+          <HeartLeaf fill={SPROUT_600} transform="translate(94,104) rotate(12) scale(1.3)" />
+          <HeartLeaf fill={SPROUT_500} transform="translate(110,124) rotate(22) scale(1.1)" />
+          <HeartLeaf fill={SPROUT_400} transform="translate(120,144) rotate(30) scale(0.9)" />
+          <HeartLeaf fill={FOREST_700} transform="translate(70,84) rotate(-10) scale(1.4)" />
+          <HeartLeaf fill={FOREST_600} transform="translate(90,84) rotate(10) scale(1.4)" />
         </g>
       );
 
     case "monstera":
       return (
         <g>
-          <path d="M80 100V64" stroke={FOREST} strokeWidth="5" strokeLinecap="round" />
-          <path
-            d="M80 66c-30-4-46 16-44 40 4 24 24 34 44 26 20 8 40-2 44-26 2-24-14-44-44-40Z"
-            fill={SPROUT_500}
-          />
-          <circle cx="66" cy="86" r="5.5" fill="#ffffff" />
-          <circle cx="94" cy="86" r="5.5" fill="#ffffff" />
-          <circle cx="80" cy="72" r="4.5" fill="#ffffff" />
-          <path d="M80 66c-4 18-2 34 0 46" stroke={SPROUT_600} strokeWidth="2.5" fill="none" opacity="0.5" />
+          <path d="M80 98V70" stroke={FOREST_700} strokeWidth="4.5" strokeLinecap="round" fill="none" />
+          <g fill={FOREST_500}>
+            <ellipse cx="80" cy="66" rx="27" ry="25" />
+            <ellipse cx="55" cy="76" rx="15" ry="19" transform="rotate(-24 55 76)" />
+            <ellipse cx="105" cy="76" rx="15" ry="19" transform="rotate(24 105 76)" />
+            <ellipse cx="62" cy="48" rx="13" ry="17" transform="rotate(-38 62 48)" />
+            <ellipse cx="98" cy="48" rx="13" ry="17" transform="rotate(38 98 48)" />
+            <ellipse cx="80" cy="38" rx="13" ry="15" />
+          </g>
+          <path d="M58,80 C52,72 53,60 60,52 C55,62 54,72 58,80 Z" fill={FOREST_600} opacity="0.45" />
+          <ellipse cx="80" cy="50" rx="3.6" ry="9" fill="#ffffff" transform="rotate(4 80 50)" />
+          <ellipse cx="60" cy="66" rx="3" ry="7.5" fill="#ffffff" transform="rotate(-32 60 66)" />
+          <ellipse cx="100" cy="66" rx="3" ry="7.5" fill="#ffffff" transform="rotate(32 100 66)" />
+          <ellipse cx="80" cy="82" rx="2.6" ry="6.5" fill="#ffffff" transform="rotate(2 80 82)" />
         </g>
       );
 
     case "snake":
       return (
         <g>
-          <path d="M62 100c-4-24 0-42 6-52 4 12 6 30 4 52Z" fill={SPROUT_400} />
-          <path d="M78 100c-3-30 1-52 6-64 5 14 7 38 3 64Z" fill={SPROUT_600} />
-          <path d="M94 100c-4-22 0-38 5-48 4 10 5 28 3 48Z" fill={SPROUT_500} />
-          <path d="M78 36c-2 18-1 40 0 58" stroke={FOREST} strokeWidth="2" opacity="0.4" />
+          <Blade fill={FOREST_600} transform="translate(64,100) rotate(-16) scale(1.55)" />
+          <Blade fill={SPROUT_600} transform="translate(74,100) rotate(-6) scale(2)" />
+          <Blade fill={SPROUT_500} transform="translate(86,100) rotate(6) scale(1.85)" />
+          <Blade fill={FOREST_500} transform="translate(96,100) rotate(16) scale(1.35)" />
+          <path d="M62,70 C68,68 72,66 76,64" stroke={FOREST_800} strokeWidth="1.4" opacity="0.35" fill="none" strokeLinecap="round" />
+          <path d="M70,84 C78,82 84,80 90,79" stroke={FOREST_800} strokeWidth="1.4" opacity="0.3" fill="none" strokeLinecap="round" />
+          <path d="M80,50 C86,49 90,48 94,48" stroke={FOREST_800} strokeWidth="1.2" opacity="0.3" fill="none" strokeLinecap="round" />
         </g>
       );
 
     case "spider":
       return (
         <g>
-          <path d="M80 100c-16-20-30-34-46-38" stroke={SPROUT_500} strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M80 100c-10-24-18-42-24-56" stroke={SPROUT_600} strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M80 100c2-26 4-44 4-60" stroke={SPROUT_500} strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M80 100c10-24 18-42 24-56" stroke={SPROUT_600} strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M80 100c16-20 30-34 46-38" stroke={SPROUT_500} strokeWidth="4" fill="none" strokeLinecap="round" />
+          <Blade fill={FOREST_500} transform="translate(80,98) rotate(-58) scale(1.5)" />
+          <Blade fill={SPROUT_600} transform="translate(80,98) rotate(-32) scale(1.85)" />
+          <Blade fill={SPROUT_500} transform="translate(80,98) rotate(-8) scale(2.05)" />
+          <Blade fill={SPROUT_500} transform="translate(80,98) rotate(12) scale(2)" />
+          <Blade fill={SPROUT_600} transform="translate(80,98) rotate(34) scale(1.8)" />
+          <Blade fill={FOREST_500} transform="translate(80,98) rotate(58) scale(1.45)" />
+          <Blade fill={SPROUT_200} transform="translate(80,98) rotate(-58) scale(0.55,1.35)" />
+          <Blade fill={SPROUT_200} transform="translate(80,98) rotate(-32) scale(0.55,1.65)" />
+          <Blade fill={SPROUT_200} transform="translate(80,98) rotate(-8) scale(0.55,1.8)" />
+          <Blade fill={SPROUT_200} transform="translate(80,98) rotate(12) scale(0.55,1.75)" />
+          <Blade fill={SPROUT_200} transform="translate(80,98) rotate(34) scale(0.55,1.6)" />
+          <Blade fill={SPROUT_200} transform="translate(80,98) rotate(58) scale(0.55,1.3)" />
         </g>
       );
 
     case "broadleaf":
       return (
         <g>
-          <path d="M62 100V78" stroke={FOREST} strokeWidth="4" strokeLinecap="round" />
-          <path d="M62 78c-18-6-24 10-18 26 6 12 20 14 28 4 4-14 2-26-10-30Z" fill={SPROUT_500} />
-          <path d="M98 100V70" stroke={FOREST} strokeWidth="4" strokeLinecap="round" />
-          <path d="M98 70c20-4 28 14 20 30-8 12-22 12-30 0-4-14 0-26 10-30Z" fill={SPROUT_600} />
-          <path d="M80 100V60" stroke={FOREST} strokeWidth="4" strokeLinecap="round" />
-          <ellipse cx="80" cy="52" rx="5.5" ry="9" fill="#ffffff" />
+          <path d="M65,98V70" stroke={FOREST_700} strokeWidth="3.5" strokeLinecap="round" fill="none" />
+          <WideBlade fill={FOREST_500} transform="translate(65,70) rotate(-14) scale(1.15)" />
+          <path d="M95,98V64" stroke={FOREST_700} strokeWidth="3.5" strokeLinecap="round" fill="none" />
+          <WideBlade fill={SPROUT_600} transform="translate(95,64) rotate(10) scale(1.3)" />
+          <path d="M80,98V80" stroke={FOREST_700} strokeWidth="3.5" strokeLinecap="round" fill="none" />
+          <WideBlade fill={SPROUT_500} transform="translate(80,80) rotate(-2) scale(1.05)" />
+          <path d="M65,68 V96" stroke="#ffffff" strokeWidth="1.2" opacity="0.4" transform="rotate(-14 65 70)" fill="none" />
+          <path d="M95,62 V94" stroke="#ffffff" strokeWidth="1.2" opacity="0.4" transform="rotate(10 95 64)" fill="none" />
         </g>
       );
 
     case "fiddle":
       return (
         <g>
-          <path d="M80 100V60" stroke={FOREST} strokeWidth="5" strokeLinecap="round" />
+          <WideBlade fill={FOREST_600} transform="translate(58,98) rotate(-18) scale(0.65)" />
+          <path d="M80,98V90" stroke={FOREST_700} strokeWidth="5.5" strokeLinecap="round" fill="none" />
+          <WideBlade fill={FOREST_500} transform="translate(80,90) rotate(0) scale(1.2)" />
+          <path d="M80,86 L80,27" stroke={SPROUT_400} strokeWidth="1.8" opacity="0.75" fill="none" strokeLinecap="round" />
           <path
-            d="M80 62c-22 2-30 22-22 40 6 14 16 20 22 20s16-6 22-20c8-18 0-38-22-40Z"
-            fill={SPROUT_600}
+            d="M80,44 C74,41 68,39 63,38 M80,44 C86,41 92,39 97,38 M80,58 C73,57 67,57 61,59 M80,58 C87,57 93,57 99,59 M80,72 C74,73 68,75 63,78 M80,72 C86,73 92,75 97,78"
+            stroke={SPROUT_400}
+            strokeWidth="1.2"
+            opacity="0.6"
+            fill="none"
+            strokeLinecap="round"
           />
-          <path d="M80 66v52" stroke={SPROUT_400} strokeWidth="2.5" opacity="0.6" />
-          <path d="M80 78c-8 4-12 12-12 20M80 78c8 4 12 12 12 20" stroke={SPROUT_400} strokeWidth="2" fill="none" opacity="0.5" />
         </g>
       );
 
     case "succulent":
       return (
         <g>
-          {[0, 51, 102, 153, 204, 255, 306].map((deg, i) => (
-            <path
-              key={deg}
-              d="M80 98c-3-10 0-18 3-22 3 4 6 12 3 22Z"
-              fill={i % 2 === 0 ? SPROUT_400 : SPROUT_600}
-              transform={`rotate(${deg} 80 98)`}
-            />
-          ))}
-          <circle cx="80" cy="98" r="4" fill={SPROUT_300} />
+          <Petal fill={FOREST_500} transform="translate(80,96) rotate(-95) scale(1.15)" />
+          <Petal fill={SPROUT_600} transform="translate(80,96) rotate(-63) scale(1.25)" />
+          <Petal fill={FOREST_500} transform="translate(80,96) rotate(-31) scale(1.35)" />
+          <Petal fill={SPROUT_600} transform="translate(80,96) rotate(0) scale(1.4)" />
+          <Petal fill={FOREST_500} transform="translate(80,96) rotate(31) scale(1.35)" />
+          <Petal fill={SPROUT_600} transform="translate(80,96) rotate(63) scale(1.25)" />
+          <Petal fill={FOREST_500} transform="translate(80,96) rotate(95) scale(1.15)" />
+          <Petal fill={SPROUT_400} transform="translate(80,96) rotate(-47) scale(0.9)" />
+          <Petal fill={SPROUT_500} transform="translate(80,96) rotate(-15) scale(1)" />
+          <Petal fill={SPROUT_500} transform="translate(80,96) rotate(15) scale(1)" />
+          <Petal fill={SPROUT_400} transform="translate(80,96) rotate(47) scale(0.9)" />
+          <circle cx="80" cy="96" r="4" fill={FOREST_600} />
         </g>
       );
 
     case "string":
       return (
         <g>
-          {[58, 72, 88, 102].map((x, i) => (
-            <g key={x}>
-              <path
-                d={`M${x} 96C${x - 4} 108 ${x + 4} 118 ${x} 132`}
-                stroke={SPROUT_600}
-                strokeWidth="2"
-                fill="none"
-              />
-              {[104, 116, 128, 140].map((y) => (
-                <circle key={y} cx={x + (i % 2 === 0 ? 2 : -2)} cy={y} r="3.4" fill={SPROUT_500} />
-              ))}
-            </g>
-          ))}
+          <path d="M64,96 C60,110 66,122 61,138" stroke={FOREST_500} strokeWidth="1.8" fill="none" />
+          <Pearl fill={SPROUT_500} transform="translate(63,104)" />
+          <Pearl fill={SPROUT_600} transform="translate(65,114) scale(1.1)" />
+          <Pearl fill={SPROUT_500} transform="translate(60,124) scale(0.95)" />
+          <Pearl fill={SPROUT_400} transform="translate(63,134) scale(0.85)" />
+          <path d="M76,96 C80,112 74,120 78,140" stroke={FOREST_500} strokeWidth="1.8" fill="none" />
+          <Pearl fill={SPROUT_600} transform="translate(78,106) scale(1.05)" />
+          <Pearl fill={SPROUT_500} transform="translate(74,118) scale(1.15)" />
+          <Pearl fill={SPROUT_600} transform="translate(77,129) scale(0.9)" />
+          <Pearl fill={SPROUT_400} transform="translate(78,139) scale(0.8)" />
+          <path d="M88,96 C92,108 87,124 91,136" stroke={FOREST_500} strokeWidth="1.8" fill="none" />
+          <Pearl fill={SPROUT_500} transform="translate(90,103) scale(0.95)" />
+          <Pearl fill={SPROUT_600} transform="translate(87,115) scale(1.1)" />
+          <Pearl fill={SPROUT_500} transform="translate(90,126) scale(1)" />
+          <Pearl fill={SPROUT_400} transform="translate(91,136) scale(0.85)" />
+          <path d="M100,96 C97,112 103,120 99,142" stroke={FOREST_500} strokeWidth="1.8" fill="none" />
+          <Pearl fill={SPROUT_600} transform="translate(99,105) scale(1)" />
+          <Pearl fill={SPROUT_500} transform="translate(102,117) scale(1.1)" />
+          <Pearl fill={SPROUT_600} transform="translate(98,129) scale(0.9)" />
+          <Pearl fill={SPROUT_400} transform="translate(99,141) scale(0.8)" />
         </g>
       );
 
     case "pilea":
       return (
         <g>
-          <path d="M64 100V80" stroke={FOREST} strokeWidth="3" strokeLinecap="round" />
-          <circle cx="64" cy="72" r="12" fill={SPROUT_500} />
-          <path d="M96 100V72" stroke={FOREST} strokeWidth="3" strokeLinecap="round" />
-          <circle cx="96" cy="62" r="14" fill={SPROUT_600} />
-          <path d="M80 100V86" stroke={FOREST} strokeWidth="3" strokeLinecap="round" />
-          <circle cx="80" cy="78" r="10" fill={SPROUT_400} />
+          <path d="M78,98 C74,88 68,82 60,78" stroke={FOREST_700} strokeWidth="3" fill="none" strokeLinecap="round" />
+          <Coin fill={SPROUT_600} transform="translate(58,74) rotate(-8) scale(0.95)" />
+          <path d="M84,98 C90,86 98,78 108,74" stroke={FOREST_700} strokeWidth="3" fill="none" strokeLinecap="round" />
+          <Coin fill={SPROUT_500} transform="translate(110,70) rotate(6) scale(0.85)" />
+          <path d="M80,98 C80,84 82,70 80,58" stroke={FOREST_700} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          <Coin fill={FOREST_500} transform="translate(80,54) rotate(2) scale(1.25)" />
         </g>
       );
 
     case "palm":
       return (
         <g>
-          {[-60, -30, 0, 30, 60].map((deg) => (
-            <path
-              key={deg}
-              d="M80 100C80 70 82 50 88 38"
-              stroke={deg % 60 === 0 ? SPROUT_600 : SPROUT_500}
-              strokeWidth="3.5"
-              fill="none"
-              strokeLinecap="round"
-              transform={`rotate(${deg} 80 100)`}
-            />
-          ))}
+          <path d="M80,98 C79,80 76,64 66,50" stroke={FOREST_700} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+          <path d="M80,98 C80,76 80,58 80,42" stroke={FOREST_700} strokeWidth="2.8" fill="none" strokeLinecap="round" />
+          <path d="M80,98 C81,80 84,64 94,50" stroke={FOREST_700} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+          <path d="M80,98 C77,82 68,68 52,60" stroke={FOREST_700} strokeWidth="2.3" fill="none" strokeLinecap="round" />
+          <path d="M80,98 C83,82 92,68 108,60" stroke={FOREST_700} strokeWidth="2.3" fill="none" strokeLinecap="round" />
+
+          <Blade fill={FOREST_500} transform="translate(78,80) rotate(-52) scale(0.6)" />
+          <Blade fill={SPROUT_600} transform="translate(72,66) rotate(-40) scale(0.65)" />
+          <Blade fill={FOREST_500} transform="translate(66,52) rotate(-25) scale(0.7)" />
+
+          <Blade fill={SPROUT_600} transform="translate(80,76) rotate(-14) scale(0.68)" />
+          <Blade fill={SPROUT_500} transform="translate(80,58) rotate(0) scale(0.75)" />
+          <Blade fill={SPROUT_600} transform="translate(80,42) rotate(14) scale(0.68)" />
+
+          <Blade fill={FOREST_500} transform="translate(82,80) rotate(52) scale(0.6)" />
+          <Blade fill={SPROUT_600} transform="translate(88,66) rotate(40) scale(0.65)" />
+          <Blade fill={FOREST_500} transform="translate(94,52) rotate(25) scale(0.7)" />
+
+          <Blade fill={SPROUT_500} transform="translate(60,66) rotate(-70) scale(0.55)" />
+          <Blade fill={SPROUT_500} transform="translate(100,66) rotate(70) scale(0.55)" />
         </g>
       );
 
     case "herb":
       return (
         <g>
-          {[
-            [64, 88, SPROUT_500],
-            [80, 82, SPROUT_600],
-            [96, 88, SPROUT_500],
-            [72, 96, SPROUT_400],
-            [88, 96, SPROUT_400],
-          ].map(([cx, cy, fill], i) => (
-            <circle key={i} cx={cx as number} cy={cy as number} r="11" fill={fill as string} />
-          ))}
+          <path d="M70,98 C68,90 66,84 62,78" stroke={FOREST_500} strokeWidth="2" fill="none" strokeLinecap="round" />
+          <path d="M80,98 C80,88 80,80 80,72" stroke={FOREST_500} strokeWidth="2" fill="none" strokeLinecap="round" />
+          <path d="M90,98 C92,90 94,84 98,78" stroke={FOREST_500} strokeWidth="2" fill="none" strokeLinecap="round" />
+          <HerbUnit fill={SPROUT_600} transform="translate(62,78) rotate(-20) scale(1.1)" />
+          <HerbUnit fill={SPROUT_500} transform="translate(62,78) rotate(20) scale(0.95)" />
+          <HerbUnit fill={FOREST_500} transform="translate(80,72) rotate(-15) scale(1.2)" />
+          <HerbUnit fill={SPROUT_600} transform="translate(80,72) rotate(0) scale(1.3)" />
+          <HerbUnit fill={SPROUT_500} transform="translate(80,72) rotate(18) scale(1.15)" />
+          <HerbUnit fill={SPROUT_500} transform="translate(98,78) rotate(-20) scale(0.95)" />
+          <HerbUnit fill={SPROUT_600} transform="translate(98,78) rotate(20) scale(1.1)" />
         </g>
       );
 
     case "orchid":
       return (
         <g>
-          <path d="M80 100C76 80 84 60 96 44" stroke={SPROUT_600} strokeWidth="3" fill="none" strokeLinecap="round" />
-          <ellipse cx="62" cy="98" rx="12" ry="7" fill={SPROUT_500} transform="rotate(-10 62 98)" />
-          <ellipse cx="60" cy="86" rx="11" ry="6.5" fill={SPROUT_600} transform="rotate(-8 60 86)" />
-          {[[96, 44], [88, 56]].map(([cx, cy], i) => (
-            <g key={i}>
-              {[0, 72, 144, 216, 288].map((deg) => (
-                <ellipse
-                  key={deg}
-                  cx={cx}
-                  cy={cy - 6}
-                  rx="4.5"
-                  ry="7"
-                  fill={i === 0 ? BLOOM : "#f6a08e"}
-                  transform={`rotate(${deg} ${cx} ${cy})`}
-                />
-              ))}
-              <circle cx={cx} cy={cy} r="2.6" fill={SUN} />
-            </g>
-          ))}
+          <WideBlade fill={FOREST_600} transform="translate(66,98) rotate(-16) scale(0.7)" />
+          <WideBlade fill={FOREST_500} transform="translate(94,98) rotate(16) scale(0.6)" />
+          <path d="M80,96 C74,78 78,58 92,42" stroke={FOREST_500} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+          <g transform="translate(60,88)">
+            <OrchidPetal fill={BLOOM_LIGHT} transform="rotate(0) scale(0.85)" />
+            <OrchidPetal fill={BLOOM_LIGHT} transform="rotate(72) scale(0.85)" />
+            <OrchidPetal fill={BLOOM} transform="rotate(144) scale(0.85)" />
+            <OrchidPetal fill={BLOOM_LIGHT} transform="rotate(216) scale(0.85)" />
+            <OrchidPetal fill={BLOOM} transform="rotate(288) scale(0.85)" />
+            <circle r="2.4" fill={SUN} />
+          </g>
+          <g transform="translate(93,42)">
+            <OrchidPetal fill={BLOOM_LIGHT} transform="rotate(0)" />
+            <OrchidPetal fill={BLOOM_LIGHT} transform="rotate(72)" />
+            <OrchidPetal fill={BLOOM} transform="rotate(144)" />
+            <OrchidPetal fill={BLOOM_LIGHT} transform="rotate(216)" />
+            <OrchidPetal fill={BLOOM} transform="rotate(288)" />
+            <circle r="2.8" fill={SUN} />
+          </g>
         </g>
       );
 
-    case "fern":
+    case "fern": {
+      const frond = (fill1: string, fill2: string) => (
+        <>
+          <Pinna fill={fill1} transform="translate(1,-10) rotate(-35) scale(1.1)" />
+          <Pinna fill={fill2} transform="translate(2,-10) rotate(35) scale(1.1)" />
+          <Pinna fill={fill1} transform="translate(2,-19) rotate(-32) scale(1)" />
+          <Pinna fill={fill2} transform="translate(3,-19) rotate(32) scale(1)" />
+          <Pinna fill={fill1} transform="translate(4,-28) rotate(-28) scale(0.9)" />
+          <Pinna fill={fill2} transform="translate(5,-28) rotate(28) scale(0.9)" />
+          <Pinna fill={fill1} transform="translate(5,-37) rotate(-24) scale(0.75)" />
+          <Pinna fill={fill2} transform="translate(6,-37) rotate(24) scale(0.75)" />
+          <Pinna fill={fill1} transform="translate(6,-45) rotate(-18) scale(0.55)" />
+          <Pinna fill={fill2} transform="translate(6.5,-45) rotate(18) scale(0.55)" />
+        </>
+      );
       return (
         <g>
-          {[-40, -20, 0, 20, 40].map((deg) => (
-            <g key={deg} transform={`rotate(${deg} 80 100)`}>
-              <path d="M80 100C80 76 80 56 80 44" stroke={SPROUT_600} strokeWidth="2" fill="none" />
-              {[52, 62, 72, 82, 92].map((y) => (
-                <g key={y}>
-                  <ellipse cx={78} cy={y} rx="4.5" ry="2.4" fill={SPROUT_500} transform={`rotate(-25 78 ${y})`} />
-                  <ellipse cx={82} cy={y} rx="4.5" ry="2.4" fill={SPROUT_400} transform={`rotate(25 82 ${y})`} />
-                </g>
-              ))}
-            </g>
-          ))}
+          <g transform="translate(80,98) rotate(-42)">
+            <path d="M0,0 C3,-16 9,-32 6,-50" stroke={FOREST_500} strokeWidth="1.8" fill="none" />
+            {frond(SPROUT_600, SPROUT_500)}
+          </g>
+          <g transform="translate(80,98) rotate(-14)">
+            <path d="M0,0 C2,-18 6,-36 3,-56" stroke={FOREST_600} strokeWidth="2" fill="none" />
+            {frond(FOREST_500, SPROUT_600)}
+          </g>
+          <g transform="translate(80,98) rotate(14) scale(-1,1)">
+            <path d="M0,0 C2,-18 6,-36 3,-56" stroke={FOREST_600} strokeWidth="2" fill="none" />
+            {frond(FOREST_500, SPROUT_600)}
+          </g>
+          <g transform="translate(80,98) rotate(42) scale(-1,1)">
+            <path d="M0,0 C3,-16 9,-32 6,-50" stroke={FOREST_500} strokeWidth="1.8" fill="none" />
+            {frond(SPROUT_600, SPROUT_500)}
+          </g>
         </g>
       );
+    }
 
     default:
       return (
         <g>
-          <path d="M80 100V70" stroke={FOREST} strokeWidth="4" strokeLinecap="round" />
-          <path d="M80 70c-14-6-30 2-32 18 14 10 28 4 32-18Z" fill={SPROUT_500} />
-          <path d="M80 70c14-6 30 2 32 18-14 10-28 4-32-18Z" fill={SPROUT_600} />
+          <path d="M80,98V78" stroke={FOREST_700} strokeWidth="4" strokeLinecap="round" fill="none" />
+          <WideBlade fill={SPROUT_500} transform="translate(80,78) rotate(-22) scale(0.95)" />
+          <WideBlade fill={SPROUT_600} transform="translate(80,78) rotate(22) scale(0.95)" />
         </g>
       );
   }
@@ -306,8 +455,8 @@ export default function PlantIllustration({
       role="img"
       aria-label="Plant illustration"
     >
-      <Leaves variant={key} />
       <Pot />
+      <Leaves variant={key} />
     </svg>
   );
 }

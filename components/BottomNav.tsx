@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CalendarHeart, Sprout, Plus, Settings } from "lucide-react";
 
 type Tab = {
@@ -10,12 +11,6 @@ type Tab = {
   icon: typeof Sprout;
 };
 
-const TABS: Tab[] = [
-  { href: "/", label: "Today", icon: CalendarHeart },
-  { href: "/garden", label: "Garden", icon: Sprout },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -23,6 +18,13 @@ function isActive(pathname: string, href: string) {
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const t = useTranslations("nav");
+
+  const TABS: Tab[] = [
+    { href: "/", label: t("today"), icon: CalendarHeart },
+    { href: "/garden", label: t("garden"), icon: Sprout },
+    { href: "/settings", label: t("settings"), icon: Settings },
+  ];
 
   return (
     <nav
@@ -38,7 +40,7 @@ export default function BottomNav() {
         <div className="flex justify-center">
           <Link
             href="/add"
-            aria-label="Add a plant"
+            aria-label={t("addPlant")}
             className="group -mt-8 flex size-16 items-center justify-center rounded-full bg-forest-700 text-white shadow-[0_10px_24px_-8px_rgba(31,91,57,0.6)] ring-4 ring-canvas transition-transform active:scale-95"
           >
             <Plus

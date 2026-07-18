@@ -93,6 +93,17 @@ Claude returns a **confidence score + up-to-2 candidate species**; if low confid
     invocations. Start by checking Vercel/Supabase region alignment (cheap,
     high-impact if mismatched) and adding `loading.tsx` skeletons (cheap,
     directly addresses "unreactive" even before touching data-fetching).
+  - **Resolved (2026-07-10):** region confirmed aligned (Supabase East US/N.
+    Virginia, Vercel Hobby's fixed `iad1`/Washington DC — not the cause).
+    Audited all `lib/*.ts` data fetching — no avoidable N+1s or waterfalls;
+    `getDueTasks()`'s settings-then-tasks sequence is a genuine dependency
+    (needs the timezone to compute "today"), not a bug. Added `loading.tsx`
+    skeletons to every route segment (Today/Garden/plant detail/add-manual/
+    Settings) so navigation shows an instant response instead of a frozen
+    screen during the Supabase round trip — this was the main lever available
+    without paying for Vercel Pro (which would allow disabling/tuning cold
+    starts). Remaining residual latency is inherent Vercel Hobby serverless
+    cold-start behavior.
 
 ## Verification
 

@@ -1,4 +1,5 @@
 import { Leaf } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import PlantCard from "@/components/PlantCard";
@@ -9,22 +10,22 @@ import { getPlants } from "@/lib/plants";
 export const dynamic = "force-dynamic";
 
 export default async function GardenPage() {
-  const plants = await getPlants();
+  const [plants, t] = await Promise.all([getPlants(), getTranslations("garden")]);
 
   return (
     <>
       <PageHeader
-        eyebrow={plants.length ? `${plants.length} plant${plants.length === 1 ? "" : "s"}` : "Your collection"}
-        title="Garden"
+        eyebrow={plants.length ? t("eyebrowCount", { count: plants.length }) : t("eyebrowEmpty")}
+        title={t("title")}
       />
 
       {plants.length === 0 ? (
         <EmptyState
           illustration={<Leaf className="size-11 text-sprout-600" strokeWidth={2} />}
-          title="Your garden is empty"
-          body="Every jungle starts with one leaf. Snap a photo of a plant and it'll appear here as a cute little card."
+          title={t("emptyTitle")}
+          body={t("emptyBody")}
           ctaHref="/add"
-          ctaLabel="Add a plant"
+          ctaLabel={t("emptyCta")}
         />
       ) : (
         <div className="grid grid-cols-2 gap-3">

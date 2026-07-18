@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import type { Difficulty, LightLevel } from "@/lib/types";
+import type { Difficulty, LightLevel, NonEnglishLocale, TranslatableCareFields } from "@/lib/types";
 
 /*
   Claude client for plant ID (vision) + care-profile generation. Both calls
@@ -45,12 +45,18 @@ const ILLUSTRATION_KEYS = [
 export interface ClaudeIdentifyResult {
   /** False when the photo doesn't contain a plant Claude can identify at all. */
   is_plant: boolean;
+  /** One short sentence on the visible features the ID was based on — surfaced to the user as a sanity check. */
+  key_features: string;
   common_name: string;
   scientific_name: string;
   /** 0–1 model confidence. */
   confidence: number;
   candidates: { common_name: string; scientific_name: string }[];
 }
+
+const IDENTIFY_SYSTEM_PROMPT = `You are an expert horticulturist identifying houseplants from a single phone photo for a home plant-care app. Take this seriously: a wrong species means the app recommends the wrong watering schedule, light needs, and toxicity warning to a real person.
+
+Houseplants are frequently confused with a close look-alike or a differently-cared-for cousin — for example Monstera deliciosa vs. adansonii vs. Rhaphidophora tetrasperma, Epipremnum (pothos) vs. Philodendron hederaceum, Calathea vs. Maranta vs. Stromanthe, peace lily vs. Chinese evergreen, and the huge range of near-identical succulents and cacti. Before naming a species, look closely at leaf shape, margin, venation, arrangement, and growth habit, and deliberately check your answer against its most likely look-alike. Report a calibrated confidence rather than defaulting to a high round number out of habit — most real phone photos of a look-alike-prone plant deserve a mid-range score, not 0.9+.`;
 
 /** Vision ID from a single plant photo. */
 export async function identifyPlant(
@@ -60,6 +66,8 @@ export async function identifyPlant(
   const message = await client().messages.create({
     model: MODEL,
     max_tokens: 1024,
+    temperature: 0.4,
+    system: IDENTIFY_SYSTEM_PROMPT,
     tools: [
       {
         name: "identify_plant",
@@ -71,6 +79,11 @@ export async function identifyPlant(
               type: "boolean",
               description: "False if the photo does not clearly contain a plant at all (e.g. a person, a room, an object).",
             },
+            key_features: {
+              type: "string",
+              description:
+                "Before naming the species: 1-2 sentences on the specific visible features you're using — leaf shape, margin, venation, arrangement, growth habit, stem/petiole detail, any visible flowers. Empty string if is_plant is false.",
+            },
             common_name: {
               type: "string",
               description: "Best-guess common name. If is_plant is false, use an empty string.",
@@ -79,15 +92,20 @@ export async function identifyPlant(
               type: "string",
               description: "Best-guess scientific name. If is_plant is false, use an empty string.",
             },
+            look_alike_check: {
+              type: "string",
+              description:
+                "Name the single species most commonly confused with your answer, and the specific visible feature in THIS photo that confirms it's not that species instead. If there truly is no common look-alike, say so explicitly. Empty string if is_plant is false.",
+            },
             confidence: {
               type: "number",
               description:
-                "0 to 1 — how confident you are in this exact species identification. 0 if is_plant is false.",
+                "Calibrated 0-1 probability the exact species is correct, given the look-alike check. Anchors: 0.9-1.0 = distinctive features visible, no plausible confusion remains. 0.7-0.89 = confident, but the look-alike above can't be fully ruled out from this photo. 0.4-0.69 = a genuine toss-up between 2+ plausible species. Below 0.4 = largely guessing (poor photo, juvenile plant, or an unusually ambiguous species). 0 if is_plant is false.",
             },
             candidates: {
               type: "array",
               description:
-                "Up to 2 alternate species this could plausibly be instead, ordered by likelihood, each with a distinct scientific_name. Empty if you're confident or if is_plant is false.",
+                "1-2 other species this could plausibly be instead, ordered by likelihood, each with a distinct scientific_name. Always include the look-alike named above if there is one, even when fairly confident in the main answer — only leave empty for a genuinely distinctive plant with no real confusion risk, or if is_plant is false.",
               maxItems: 2,
               items: {
                 type: "object",
@@ -99,7 +117,7 @@ export async function identifyPlant(
               },
             },
           },
-          required: ["is_plant", "common_name", "scientific_name", "confidence", "candidates"],
+          required: ["is_plant", "key_features", "common_name", "scientific_name", "look_alike_check", "confidence", "candidates"],
         },
       },
     ],
@@ -257,4 +275,79 @@ export async function generateCareProfile(
   const harvestDays = raw.harvesting ? raw.harvest_days : null;
 
   return { ...raw, illustration_key: illustrationKey, harvest_days: harvestDays };
+}
+
+const LOCALE_NAMES: Record<NonEnglishLocale, string> = {
+  es: "Spanish (Spain — es-ES, not Latin American Spanish)",
+  de: "German",
+  ko: "Korean",
+};
+
+/**
+ * Translates a species' free-text care fields (the parts a human wrote/reads,
+ * not the numeric intervals or enums) into the target UI locale. species_care
+ * itself stays canonical English; this powers the on-demand
+ * species_care_translations cache (see lib/translations.ts).
+ */
+export async function translateCareProfile(
+  fields: TranslatableCareFields,
+  locale: NonEnglishLocale
+): Promise<TranslatableCareFields> {
+  const message = await client().messages.create({
+    model: MODEL,
+    max_tokens: 2048,
+    tools: [
+      {
+        name: "translated_care_profile",
+        description: "Report the translated houseplant care text.",
+        input_schema: {
+          type: "object",
+          properties: {
+            common_name: { type: "string", description: "The common plant name, localized/translated naturally — not a literal word-for-word translation if a standard local name exists." },
+            humidity: { type: "string" },
+            soil_recommendation: { type: "string" },
+            toxicity: { type: "string" },
+            propagation: { type: "string" },
+            pruning: { type: "string" },
+            harvesting: { type: ["string", "null"] },
+            dos: { type: "array", items: { type: "string" } },
+            donts: { type: "array", items: { type: "string" } },
+          },
+          required: [
+            "common_name",
+            "humidity",
+            "soil_recommendation",
+            "toxicity",
+            "propagation",
+            "pruning",
+            "harvesting",
+            "dos",
+            "donts",
+          ],
+        },
+      },
+    ],
+    tool_choice: { type: "tool", name: "translated_care_profile" },
+    messages: [
+      {
+        role: "user",
+        content: `Translate this houseplant care text into ${LOCALE_NAMES[locale]}. Keep the same
+meaning, tone (warm, beginner-friendly), and list lengths — translate naturally,
+not literally. Use translated_care_profile to report it.
+
+${JSON.stringify(fields, null, 2)}`,
+      },
+    ],
+  });
+
+  const toolUse = message.content.find((b) => b.type === "tool_use");
+  if (!toolUse || toolUse.type !== "tool_use") {
+    throw new Error("[sprout] translateCareProfile: Claude did not return a tool_use block.");
+  }
+
+  const raw = toolUse.input as TranslatableCareFields;
+  // A source with no harvesting note should never translate into one.
+  const harvesting = fields.harvesting ? raw.harvesting : null;
+
+  return { ...raw, harvesting };
 }

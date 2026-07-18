@@ -172,3 +172,82 @@ not transient).
 but it doesn't automatically make an endpoint safe from junk/resource-exhaustion —
 that's a separate question (can a caller cause unbounded state growth or unbounded
 retries?) worth asking independently for every unauthenticated write path.
+
+## L15 — In `PlantIllustration`, draw the pot before the leaves, not after
+**Context:** Redesigning the illustration set (Phase 5), three variants —
+string-of-pearls, the succulent rosette, a vine's crown — rendered as
+*nothing but the bare pot*, no errors. Root cause: `<Leaves />` was drawn
+before `<Pot />` (original ordering), and any leaf content positioned to
+drape over the rim (which trailing/draping plants need to, to look right)
+was fully covered by the opaque pot drawn on top of it. Every other variant
+happened to keep all its geometry above the rim, so the bug was invisible
+until a variant actually needed to overlap it.
+**Decision:** Swapped the render order to `<Pot /><Leaves />`. Verified this
+doesn't regress upright variants (snake, palm, etc.) — their stem bases sit
+right at the rim line either way, and a thin dark stem line under vs. over a
+light rim rect is visually indistinguishable at these sizes.
+**Prevention:** In a layered flat-illustration component, z-order isn't just
+a style choice — it determines what's clippable. Any new variant whose
+content is meant to sit "on" or "over" a shared background element needs
+that element drawn first, or the overlap silently disappears with no error,
+no console warning, nothing to grep for.
+
+## L16 — A model's self-reported confidence score needs calibration anchors, or it just clusters near 1.0
+**Context:** User-reported "plant ID isn't very accurate" (Phase 5).
+`identifyPlant`'s tool schema asked for a bare `confidence: number, 0 to 1`
+with no guidance on what the number should *mean* — Claude (like most LLMs
+asked to self-rate) defaults toward confident-sounding round numbers
+regardless of whether a real look-alike species exists, so the 0.75
+auto-confirm gate let plenty of wrong-but-confident guesses through silently.
+**Decision:** Rewrote the schema to force the comparison *before* the number:
+a required `key_features` field (what's actually visible) and a required
+`look_alike_check` field (name the most likely confusable species, state the
+specific visible feature that rules it out, or say there isn't one) both
+precede `confidence` in the schema, plus explicit numeric anchors in its
+description (0.9+ = no plausible confusion; 0.7–0.89 = confident but a
+look-alike can't be fully ruled out; etc.). Also dropped `temperature` to 0.4
+and raised the auto-confirm gate 0.75 → 0.85 to match the new anchors.
+**Prevention:** Don't ask a model for a bare calibrated probability and trust
+it — either force the comparative reasoning into required fields ordered
+*before* the score (the model can't calibrate against a look-alike it hasn't
+been made to name), or give explicit numeric anchors tied to concrete
+criteria. An un-anchored 0–1 "confidence" field is close to decorative.
+
+## L17 — Two hand-rolled toggle switches must share the exact same base-position + transform structure, not just look similar
+**Context:** User flagged the "Phone notifications" toggle looking subtly
+off next to "Email backup" right below it on Settings. Both are the same
+Tailwind peer/absolute-knob pattern, but `PushSubscribeButton`'s knob span
+set only `translate-x-5`/`translate-x-0.5` with no base `left-*` class, while
+the working email toggle sets `left-0.5` as the resting position and adds
+`translate-x-5` on top of it when checked. Without an explicit `left`, the
+knob's resting position falls back to the browser's static-position default
+instead of the same 2px inset, landing ~2px short of flush when "on."
+**Decision:** Added the missing `left-0.5` to `PushSubscribeButton`'s knob so
+both toggles use identical base+transform math.
+**Prevention:** When two components implement "the same" visual control
+(here: an on/off pill switch) independently, diff their class lists directly
+rather than trusting that both "look like a toggle" — a missing base
+positioning class is invisible in the JSX and only shows up as a few pixels
+of drift, easy to miss in review, obvious to a user's eye.
+
+## L18 — `/settings` renders inside a `display:none` wrapper on the in-progress i18n branch (open, not root-caused)
+**Context:** While verifying L17's fix in the dev server, `/settings`'
+content — confirmed correct in the DOM, correct classes, correct computed
+styles on each individual element — had a zero-size `getBoundingClientRect()`
+all the way up to a `<div>` with an empty `className` and `display:none`
+sitting directly under `<body>`. Reproduced after a hard reload, so not a
+stale client-transition artifact. Not reproduced on the live deployment
+(commit `70598e6`, pre-i18n).
+**Status: NOT ROOT-CAUSED.** Working theory: something in the uncommitted
+`next-intl` wiring (`app/layout.tsx`, `i18n/`, `messages/`) — locale
+detection/middleware behaving differently for a fresh automated browser
+session with no locale cookie than for a real returning browser — renders a
+hidden fallback tree instead of (or alongside) the real one.
+**Action:** Investigate before shipping the i18n branch for real — reproduce
+in a real browser with no locale cookie/incognito, check `middleware.ts` (if
+one gets added) and any locale-redirect logic first.
+**Prevention:** A `display:none` ancestor makes every descendant report a
+zero-size `getBoundingClientRect()` even though each element's own computed
+`display` looks correct — if a rect check comes back all zeros, walk up the
+`parentElement` chain checking `getComputedStyle(el).display` at each level
+before assuming the element itself is misconfigured.

@@ -34,7 +34,7 @@ plant care sheet reading seeded data.
 ## Phase 2 — Add-by-Photo + Claude  ⚪
 ## Phase 3 — Reminders & Dashboard  ⚪
 ## Phase 4 — Push + Email  ⚪
-## Phase 5 — Polish & Deploy  ⚪
+## Phase 5 — Polish & Deploy  🟡 in progress
 
 ### Post-Phase-0 addendum
 - Redesigned `public/icon.svg` (gradient forest bg, two-tone leaves, water-droplet
@@ -294,3 +294,53 @@ to the server, so "fallback on failure" isn't reliably detectable anyway).
 3. Once deployed to Vercel, set the `APP_URL` and `CRON_SECRET` repo secrets
    on GitHub so `.github/workflows/morning-cron.yml` can actually reach the
    app.
+
+## Phase 5 — Polish & Deploy  🟡 in progress
+Triggered by the user hitting three real issues live: the morning cron had been
+failing every hour (12 consecutive GitHub Actions failure emails), plant ID felt
+inaccurate, and the plant illustrations read as too abstract/generic.
+
+- ✅ **Cron failures diagnosed**: root cause was never a code bug — `APP_URL` and
+  `CRON_SECRET` GitHub repo secrets (Phase 4's manual step 3, above) were never
+  set, so `curl` in `.github/workflows/morning-cron.yml` hit a malformed empty
+  URL and failed in 2-4 seconds every run, silently (`-sf` swallows the response
+  body). Hardened the workflow to fail loudly instead: checks both secrets are
+  non-empty up front, captures HTTP status + response body, and only exits 0 on
+  a genuine `<400` response. The actual fix (setting the two secrets, and
+  confirming the app is deployed) is a user action — walked through live during
+  this session, including discovering the Vercel deployment already existed
+  (`sprout-ten-theta.vercel.app`, Status: Ready) but nothing had been redeployed
+  since env vars changed.
+- ✅ **Plant ID accuracy**: `identifyPlant` (`lib/anthropic.ts`) had a one-line
+  prompt and trusted a self-reported confidence score with no calibration
+  guidance — LLM confidence self-reports skew high regardless of true certainty.
+  Added a system prompt requiring a `key_features` description and an explicit
+  `look_alike_check` (name the most commonly confused species, state the visible
+  feature that rules it out) before the final answer, calibration anchors on the
+  confidence field, and `temperature: 0.4`. `candidates` are now populated
+  whenever a real look-alike exists, not just below the confidence gate.
+  `CONFIDENCE_THRESHOLD` raised 0.75 → 0.85 (`app/api/identify/route.ts`) so a
+  "confident but unruled-out look-alike" case asks instead of silently guessing.
+  `AddPlantFlow`'s `ConfirmStep` can now show alternates on "not quite" without
+  forcing a full retake, using the same candidate list.
+- ✅ **Illustration redesign**: rebuilt all 14 `PlantIllustration` variants —
+  the old set was too abstract (e.g. "herb" was 5 identical circles, "monstera"
+  a plain blob with punched white circles, "spider" five straight lines).
+  Prototyped standalone (rendered via `sharp` to PNG for visual review — the
+  Browser pane's screenshot/zoom tool was hanging on infra unrelated to the
+  page, per L15) before porting into the component. Found and fixed a real bug
+  along the way: trailing/draping variants (string-of-pearls, a succulent
+  rosette resting on the rim, a vine's crown) were rendering completely
+  invisible because `<Pot />` drew *after* `<Leaves />` and fully covered any
+  leaf content positioned over the rim. Swapped the render order (pot first)
+  — see L15.
+- ✅ **Settings toggle inconsistency**: `PushSubscribeButton`'s knob was
+  missing the `left-0.5` base position that the (correct) email-backup toggle
+  right below it has, so it rendered ~2px short of flush-right when on — see
+  L17.
+- 🟡 **Found, not fixed**: local dev (uncommitted i18n branch in progress —
+  `i18n/`, `messages/`, `lib/translations.ts`, `next-intl` wiring in
+  `app/layout.tsx`/`BottomNav.tsx`/`ReminderCard.tsx`) renders `/settings`
+  page content inside a `display:none` wrapper in this session's testing —
+  not reproduced on the live (pre-i18n) deployment. Not root-caused. See L18.
+- ✅ `npx tsc --noEmit` clean after every code change this phase.

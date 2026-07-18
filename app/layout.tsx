@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Nunito } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
@@ -44,17 +46,22 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${display.variable} ${body.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        {children}
-        <ServiceWorkerRegister />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+          <ServiceWorkerRegister />
+        </NextIntlClientProvider>
       </body>
     </html>
   );
