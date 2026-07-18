@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { serverClient } from "@/lib/supabase";
 import { getSpeciesById } from "@/lib/species";
 import { generateCareTasksForPlant, markCareTaskDone } from "@/lib/care";
 import { getSettings } from "@/lib/settings";
+import { LOCALE_COOKIE, LOCALES, DEFAULT_LOCALE } from "@/i18n/request";
+import type { Locale } from "@/lib/types";
 
 /**
  * Manual add-a-plant flow (Phase 1 stand-in for the Phase 2 camera flow — and
@@ -163,6 +166,9 @@ export async function updateSettingsAction(formData: FormData): Promise<void> {
   const email = emailInput || null;
   const emailEnabled = formData.get("email_enabled") === "on";
 
+  const rawLanguage = String(formData.get("language") ?? DEFAULT_LOCALE);
+  const language: Locale = (LOCALES as string[]).includes(rawLanguage) ? (rawLanguage as Locale) : DEFAULT_LOCALE;
+
   // push_enabled is intentionally NOT set here — it's owned by
   // setPushEnabledAction, driven by the actual subscribe/unsubscribe result
   // in PushSubscribeButton, not this form (which has no field for it).
@@ -173,11 +179,21 @@ export async function updateSettingsAction(formData: FormData): Promise<void> {
       timezone,
       email,
       email_enabled: emailEnabled,
+      language,
     })
     .eq("id", id);
   if (error) throw new Error(`[sprout] updateSettings: ${error.message}`);
 
-  revalidatePath("/settings");
+  // next-intl reads locale from this cookie (i18n/request.ts) — without
+  // setting it here, the DB value would save but the UI wouldn't actually
+  // switch language until some other request happened to set the cookie.
+  (await cookies()).set(LOCALE_COOKIE, language, { path: "/", maxAge: 60 * 60 * 24 * 365 });
+
+  // Revalidate the root layout too, not just /settings — locale/messages are
+  // read in app/layout.tsx, a parent of every route, and only revalidating
+  // /settings would leave the rest of the app showing the old language until
+  // an unrelated cache miss happened to refresh it.
+  revalidatePath("/", "layout");
 }
 
 /** Called by PushSubscribeButton right after a successful subscribe/unsubscribe. */

@@ -2,10 +2,18 @@ import Link from "next/link";
 import PlantIllustration from "@/components/PlantIllustration";
 import type { Plant } from "@/lib/types";
 
-export default function PlantCard({ plant }: { plant: Plant }) {
+export default function PlantCard({
+  plant,
+  style,
+}: {
+  plant: Plant;
+  /** Pass animationDelay for a staggered grid reveal — see GardenPage. */
+  style?: React.CSSProperties;
+}) {
   return (
     <Link
       href={`/plant/${plant.id}`}
+      style={style}
       className="animate-pop group flex flex-col items-center rounded-blob border border-line bg-surface p-4 text-center shadow-soft transition-transform active:scale-[0.97]"
     >
       <div className="flex size-20 items-center justify-center rounded-full bg-sprout-100 transition-transform group-hover:scale-105">

@@ -29,8 +29,8 @@ export default async function GardenPage() {
         />
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {plants.map((plant) => (
-            <PlantCard key={plant.id} plant={plant} />
+          {plants.map((plant, i) => (
+            <PlantCard key={plant.id} plant={plant} style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }} />
           ))}
         </div>
       )}

@@ -30,8 +30,8 @@ export default async function TodayPage() {
         />
       ) : (
         <div className="space-y-2.5">
-          {tasks.map((task) => (
-            <ReminderCard key={task.id} task={task} />
+          {tasks.map((task, i) => (
+            <ReminderCard key={task.id} task={task} style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }} />
           ))}
         </div>
       )}

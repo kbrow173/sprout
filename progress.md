@@ -338,11 +338,34 @@ inaccurate, and the plant illustrations read as too abstract/generic.
   missing the `left-0.5` base position that the (correct) email-backup toggle
   right below it has, so it rendered ~2px short of flush-right when on — see
   L17.
-- 🟡 **Found, not fixed**: local dev (uncommitted i18n branch in progress —
-  `i18n/`, `messages/`, `lib/translations.ts`, `next-intl` wiring in
-  `app/layout.tsx`/`BottomNav.tsx`/`ReminderCard.tsx`) renders `/settings`
-  page content inside a `display:none` wrapper in this session's testing —
-  not reproduced on the live (pre-i18n) deployment. Not root-caused. See L18.
+- ✅ **L18 resolved — false alarm**: the earlier `display:none`-wrapper
+  finding on `/settings` was a Browser-pane testing artifact (direct URL
+  `navigate()` vs. a real link click), not an i18n or app bug. Reproduced on
+  every route, not just Settings; a real click-driven navigation always
+  rendered correctly. No `next-intl` involvement.
+- ✅ **L12 root-caused**: Turbopack's persistent dev filesystem cache
+  (`experimental.turbopackFileSystemCacheForDev`, on by default since Next
+  16.1) matches known upstream reports of a stale/corrupted cache serving
+  wedged output with no error. Fix when it recurs: delete `.next` and
+  restart (a plain restart alone may not clear a disk-persisted cache).
+- ✅ **i18n completed**: `app/(app)/settings/page.tsx` now uses
+  `getTranslations("settings")` (was hardcoded English) and has a language
+  picker (native-language labels, `en`/`es`/`de`/`ko`). `updateSettingsAction`
+  validates + persists `settings.language` and sets the `NEXT_LOCALE` cookie
+  next-intl reads, revalidating the root layout so the switch applies
+  immediately, not just on next unrelated navigation.
+  - ✅ **Migration run, verified end-to-end live**: switched to Español,
+    confirmed the whole app (nav, Settings labels, all form text) switched
+    immediately, no reload needed; hard-reloaded and confirmed
+    `settings.language` persisted correctly; switched back to English,
+    confirmed it reverted cleanly. Second Edge Case Destroyer pass on this
+    round found 1 medium (language `<select>` missing the same stale-value
+    fallback the timezone `<select>` has) — fixed, logged as L20.
+- ✅ **Polish pass**: staggered pop-in for the Garden grid and Today's
+  reminder list (`PlantCard`/`ReminderCard` take an optional `style` prop,
+  `animationDelay` computed from index, capped past 10 items) — one
+  orchestrated reveal instead of everything popping in at once. Kept the
+  existing design language, no redesign.
 - ✅ `npx tsc --noEmit` clean after every code change this phase.
 - ✅ Edge Case Destroyer pass (`general-purpose` agent) on the four fixes
   above found 1 high, 1 medium, 2 low issues — all fixed:

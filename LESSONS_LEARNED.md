@@ -230,27 +230,55 @@ rather than trusting that both "look like a toggle" — a missing base
 positioning class is invisible in the JSX and only shows up as a few pixels
 of drift, easy to miss in review, obvious to a user's eye.
 
-## L18 — `/settings` renders inside a `display:none` wrapper on the in-progress i18n branch (open, not root-caused)
-**Context:** While verifying L17's fix in the dev server, `/settings`'
-content — confirmed correct in the DOM, correct classes, correct computed
-styles on each individual element — had a zero-size `getBoundingClientRect()`
-all the way up to a `<div>` with an empty `className` and `display:none`
-sitting directly under `<body>`. Reproduced after a hard reload, so not a
-stale client-transition artifact. Not reproduced on the live deployment
-(commit `70598e6`, pre-i18n).
-**Status: NOT ROOT-CAUSED.** Working theory: something in the uncommitted
-`next-intl` wiring (`app/layout.tsx`, `i18n/`, `messages/`) — locale
-detection/middleware behaving differently for a fresh automated browser
-session with no locale cookie than for a real returning browser — renders a
-hidden fallback tree instead of (or alongside) the real one.
-**Action:** Investigate before shipping the i18n branch for real — reproduce
-in a real browser with no locale cookie/incognito, check `middleware.ts` (if
-one gets added) and any locale-redirect logic first.
-**Prevention:** A `display:none` ancestor makes every descendant report a
-zero-size `getBoundingClientRect()` even though each element's own computed
-`display` looks correct — if a rect check comes back all zeros, walk up the
-`parentElement` chain checking `getComputedStyle(el).display` at each level
-before assuming the element itself is misconfigured.
+## L18 — RESOLVED: was a Browser-pane navigation artifact, not an app bug
+**Original report:** `/settings` appeared to render inside a `display:none`
+wrapper — confirmed correct DOM/classes/computed-styles per element, but a
+zero-size `getBoundingClientRect()` up to an empty `display:none` `<div>`
+directly under `<body>`.
+**Actual cause:** the automation tool's URL-based `navigate()` call (jumping
+straight to a URL from a page already open in the tab) left a stale hidden
+copy of the previous route's tree in the DOM while the new route rendered
+correctly but invisibly — Next 16's client-router cache/transition handling
+for a programmatic `location`-style navigation, not a real link click.
+Confirmed by comparing three cases: a real `<Link>` click to Settings
+rendered correctly every time (content in the *visible* tree); the automated
+tool's direct URL navigation reproduced the hidden-tree symptom consistently,
+on `/` as well as `/settings` — i.e. every route, not something specific to
+i18n or to Settings. No `next-intl` involvement at all.
+**Prevention:** Before logging a "hidden content" finding from automated
+browser testing, verify with a real click-driven navigation (`find` + click
+an actual link/ref), not just a direct `navigate()` URL jump — the two don't
+always exercise the same code path, and only one of them is what a real user
+does. A `display:none` ancestor makes every descendant report a zero-size
+`getBoundingClientRect()` even though each element's own computed `display`
+looks correct — if a rect check comes back all zeros, walk up the
+`parentElement` chain checking `getComputedStyle(el).display`, and check
+whether a *sibling* tree (not that one) is the actually-visible one before
+concluding the app itself is broken.
+
+## L12 addendum — root cause found: Turbopack's persistent dev filesystem cache
+**Update to L12 (Turbopack stale-route 404):** confirmed via upstream
+Next.js docs/issues, not just a Phase 5 restart-and-hope. Next 16.1+ enables
+`experimental.turbopackFileSystemCacheForDev` **by default** — Turbopack
+persists build data to `.next` across dev sessions to speed up rebuilds.
+Multiple upstream reports (vercel/next.js discussions #87283, among others)
+describe the same class of symptom: a restored cache is stale/corrupted, the
+dev server reports "Ready" but serves wedged/incorrect output (in our case,
+a 404 for a route that exists) with no error surfaced. This project's
+`next.config.ts` doesn't set the flag at all, so it's silently on at the
+default.
+**Fix when it recurs:** delete the `.next` folder, then restart the dev
+server — a plain process restart (the original L12 workaround) may not
+clear a *disk-persisted* stale cache the way it seemed to before; deleting
+`.next` explicitly is the more reliable fix. If it becomes frequent enough
+to be worse than the rebuild-speed benefit, set
+`experimental.turbopackFileSystemCacheForDev: false` in `next.config.ts` —
+not done preemptively here since the feature is documented as stable for
+dev use and the failure mode is rare/first-seen-once-in-this-project so far.
+**Prevention:** When a dev-only symptom has "no error, restart fixes it,"
+suspect a persistent cache before suspecting the app's own code — check
+what the framework caches to disk across restarts and whether that cache
+survived across the change that seemed to trigger it.
 
 ## L19 — Edge Case Destroyer pass on Phase 5 (cron/plant-ID/illustrations/toggle)
 **Context:** Ran per Commandments before calling Phase 5's fixes done.
@@ -278,3 +306,21 @@ Case Destroyer pass exists specifically to catch that a fix for one field
 didn't get applied to its siblings. When spreading a richer internal type
 into a narrower public one, whitelist explicitly; a spread silently carries
 along whatever the internal type grows next.
+
+## L20 — A new `<select>` needs the same stale-value guard as the one right next to it
+**Context:** Edge Case Destroyer pass on the i18n Settings completion found
+the new language `<select>` (`app/(app)/settings/page.tsx`) had no fallback
+`<option>` for a `settings.language` value outside `LOCALES`, even though
+the timezone `<select>` two fields above it already has exactly that guard
+for the same reason. Without it: a stored value not in the list matches no
+`<option>`, the browser silently shows the first one instead, and the next
+Save — for *any* field, not just language — would submit and persist that
+wrong default, silently overwriting the user's real preference.
+**Decision:** Mirrored the timezone pattern: render an extra `<option>` for
+`settings.language` when it isn't in `LOCALES`.
+**Prevention:** When a new form field is structurally identical to an
+existing one (a `<select>` bound to a DB enum-ish value), copy its edge-case
+handling too, not just its markup — the existing field's guard is often
+there *because* of a bug already found once. This is a small version of
+L17 (two toggles must share the same base + transform) for selects instead
+of toggles: near-identical UI controls need near-identical defensiveness.

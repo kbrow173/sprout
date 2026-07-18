@@ -1,7 +1,6 @@
 SPROUT — PHASE 5 REAL-WORLD TEST CHECKLIST
-(Cron fix, plant ID accuracy, illustration redesign, toggle fix. Some of this
-needs your real phone/browser — a fresh incognito session for the i18n check
-can't be simulated by an automated tool.)
+(Cron fix, plant ID accuracy, illustration redesign, toggle fix, i18n
+language picker, polish pass. Some of this needs your real phone/browser.)
 
 BEFORE YOU START — two setup steps still pending:
   [ ] Run supabase/migration_004_i18n.sql in the Supabase SQL editor — the
@@ -50,13 +49,22 @@ SETTINGS TOGGLE:
       "Email backup" toggle directly above/below it. Both should look
       pixel-identical in their on and off positions
 
-I18N (open bug — L18 in LESSONS_LEARNED.md):
-  [ ] Open Settings in a fresh incognito/private window (no existing locale
-      cookie) — confirm the page actually renders (toggles, morning time,
-      timezone all visible), not blank
-  [ ] If it IS blank/broken in incognito: that confirms L18 is a real,
-      live bug, not just an artifact of the automated test browser used
-      during development — report back so it gets prioritized
+LANGUAGE PICKER (do this AFTER running migration_004_i18n.sql — will
+500 on Save otherwise):
+  [ ] Open Settings, change Language to Español, tap Save — confirm the
+      whole app switches to Spanish immediately (nav labels, Settings page
+      itself), not just after a later unrelated navigation
+  [ ] Add a plant while in Spanish — confirm its care sheet (watering,
+      light, etc.) is actually translated, not just the app shell
+  [ ] Switch back to English, confirm everything reverts
+  [ ] Try German and Korean too — confirm the language names in the picker
+      itself show in their own language (Deutsch, 한국어), not translated
+
+POLISH PASS:
+  [ ] Open Garden with several plants — cards should pop in one after
+      another in a quick ripple, not all at once
+  [ ] Open Today with a few due tasks — same staggered pop-in on the
+      reminder list
 
 EDGE CASES (try to break it):
   [ ] Photograph a very blurry/dark photo of a plant — confirm you get a

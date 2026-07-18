@@ -18,13 +18,20 @@ const TASK_ICON: Record<CareTaskType, typeof Droplet> = {
 };
 
 /** A single due-today (or overdue) care task, with a one-tap mark-done. */
-export default function ReminderCard({ task }: { task: DueTask }) {
+export default function ReminderCard({
+  task,
+  style,
+}: {
+  task: DueTask;
+  /** Pass animationDelay for a staggered list reveal — see TodayPage. */
+  style?: React.CSSProperties;
+}) {
   const t = useTranslations("reminderCard");
   const Icon = TASK_ICON[task.type];
   const label = t(task.type);
 
   return (
-    <div className="animate-pop flex items-center gap-3 rounded-3xl border border-line bg-surface px-4 py-3 shadow-soft">
+    <div style={style} className="animate-pop flex items-center gap-3 rounded-3xl border border-line bg-surface px-4 py-3 shadow-soft">
       <Link href={`/plant/${task.plant.id}`} className="flex min-w-0 flex-1 items-center gap-3">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-sprout-100">
           <PlantIllustration illustrationKey={task.plant.illustration_key} size={36} />

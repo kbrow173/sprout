@@ -6,9 +6,11 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder · ⚪ planned.
 ## Config & PWA
 | File | Purpose | Status |
 |---|---|---|
-| `next.config.ts` | Image `remotePatterns` wildcard; `turbopack.root` pinned | 🟢 |
+| `next.config.ts` | Image `remotePatterns` wildcard; `turbopack.root` pinned; wraps config with `next-intl/plugin` pointed at `i18n/request.ts` | 🟢 |
+| `i18n/request.ts` | next-intl config: cookie-based locale (`NEXT_LOCALE`, no URL prefix — see its own header comment for why), `LOCALES`/`DEFAULT_LOCALE` exports reused by the Settings language picker and `updateSettingsAction` | 🟢 |
+| `messages/{en,es,de,ko}.json` | Message catalogs, one namespace per screen (`nav`, `today`, `garden`, `settings`, etc.) | 🟢 |
 | `app/globals.css` | **Design system** — all color/type/radius tokens (`@theme`). Claude Design seam. | 🟢 |
-| `app/layout.tsx` | Root layout: fonts, PWA metadata + full icon set, `viewport` theme-color, SW registration | 🟢 |
+| `app/layout.tsx` | Root layout: fonts, PWA metadata + full icon set, `viewport` theme-color, SW registration, `NextIntlClientProvider` (locale/messages from `getLocale()`/`getMessages()`) | 🟢 |
 | `public/manifest.json` | PWA manifest — SVG + 192/512/maskable PNG icons | 🟢 |
 | `public/sw.js` | Service worker — `push` + `notificationclick` only (no offline cache) | 🟢 |
 | `public/icon.svg` | Source brand icon (gradient pot + two-tone leaves + droplet accent) | 🟢 |
@@ -20,27 +22,27 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder · ⚪ planned.
 | File | Purpose | Status |
 |---|---|---|
 | `app/(app)/layout.tsx` | Mobile column frame + `BottomNav` | 🟢 |
-| `app/(app)/page.tsx` | **Today** dashboard — `getDueTasks()`, `ReminderCard` list or `EmptyState`. `force-dynamic`. | 🟢 |
-| `app/(app)/garden/page.tsx` | Garden grid, real data via `getPlants()`. `force-dynamic`. | 🟢 |
+| `app/(app)/page.tsx` | **Today** dashboard — `getDueTasks()`, `ReminderCard` list (staggered reveal) or `EmptyState`, `getTranslations("today")`. `force-dynamic`. | 🟢 |
+| `app/(app)/garden/page.tsx` | Garden grid, real data via `getPlants()`, `getTranslations("garden")`, staggered card reveal. `force-dynamic`. | 🟢 |
 | `app/(app)/add/page.tsx` | Camera entry — renders `AddPlantFlow` | 🟢 |
 | `app/(app)/add/manual/page.tsx` | Species search → questions → save. `force-dynamic`. | 🟢 |
-| `app/(app)/settings/page.tsx` | Real settings: `PushSubscribeButton`, email backup toggle + address, morning time (hour-only, rounded), timezone select (self-heals an out-of-list stored value instead of silently resetting it). `force-dynamic`. | 🟢 |
+| `app/(app)/settings/page.tsx` | Real settings, `getTranslations("settings")` (next-intl, server-side): `PushSubscribeButton`, email backup toggle + address, morning time (hour-only, rounded), timezone select (self-heals an out-of-list stored value), language picker (native-language labels, `en`/`es`/`de`/`ko`). `force-dynamic`. | 🟢 |
 | `app/(app)/plant/[id]/page.tsx` | Full care sheet from live DB (join via FK). `force-dynamic`. | 🟢 |
 
 ## Components
 | File | Purpose | Status |
 |---|---|---|
-| `components/BottomNav.tsx` | Fixed bottom nav + center Add FAB (active via `usePathname`) | 🟢 |
+| `components/BottomNav.tsx` | Fixed bottom nav + center Add FAB (active via `usePathname`), `useTranslations("nav")` | 🟢 |
 | `components/PageHeader.tsx` | Reusable screen header (eyebrow + title + action) | 🟢 |
 | `components/EmptyState.tsx` | Illustrated empty-state card w/ optional CTA | 🟢 |
 | `components/PlantIllustration.tsx` | 12 curated SVG variants (vine/monstera/snake/spider/broadleaf/fiddle/succulent/string/pilea/palm/herb/orchid/fern) + generic fallback | 🟢 |
-| `components/PlantCard.tsx` | Garden grid card | 🟢 |
+| `components/PlantCard.tsx` | Garden grid card. Optional `style` prop for a staggered grid-reveal `animationDelay` (see `app/(app)/garden/page.tsx`). | 🟢 |
 | `components/CareSection.tsx` | Reusable icon+title+body section on the care sheet | 🟢 |
 | `components/DeleteButton.tsx` | Client confirm-guarded delete submit button | 🟢 |
 | `components/ManualAddForm.tsx` | Species search/select, then renders `PlantQuestions`. Also the "which one is it?" fallback linked from AddPlantFlow's error/uncertain states. | 🟢 |
 | `components/PlantQuestions.tsx` | Shared potted/soil/drainage/light/nickname/date question steps + submit button + hidden `care_species_id`/`photo_url` inputs. Used by both ManualAddForm and AddPlantFlow. | 🟢 |
 | `components/AddPlantFlow.tsx` | Camera/upload → `/api/identify` → confidence gate (0.75: auto-confirm vs candidate chips) → `/api/care-profile` → `PlantQuestions` → save. Photo uploads to Storage in parallel with ID. | 🟢 |
-| `components/ReminderCard.tsx` | Today task row: plant illustration/name, task icon+label, overdue flag, one-tap mark-done (`useFormStatus`-disabled while pending). Client component. | 🟢 |
+| `components/ReminderCard.tsx` | Today task row: plant illustration/name, task icon+label, overdue flag, one-tap mark-done (`useFormStatus`-disabled while pending). Optional `style` prop for staggered-reveal `animationDelay`. Client component. | 🟢 |
 | `components/PushSubscribeButton.tsx` | Tap-gated (iOS requirement) `Notification.requestPermission()` → `pushManager.subscribe()` → `/api/subscribe`. Self-heals `settings.push_enabled` to match real browser subscription state on mount, but only writes when it's actually out of sync (takes `initialEnabled` prop to compare against). | 🟢 |
 
 ## Data & lib
@@ -50,10 +52,11 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder · ⚪ planned.
 | `lib/supabase.ts` | Untyped browser (anon) + server (service-role) clients | 🟢 |
 | `lib/species.ts` | `getAllSpecies()`, `getSpeciesById()`, `getSpeciesByScientificName()` (case-insensitive, used by the care-profile cache check) — server-only reads | 🟢 |
 | `lib/plants.ts` | `getPlants()`, `getPlantWithCare()` (FK-embedded join) — server-only reads | 🟢 |
-| `lib/actions.ts` | `"use server"`: `createPlantAction` (writes `photo_url`, calls `generateCareTasksForPlant`), `deletePlantAction` (deletes the plant's Storage photo; `care_tasks` cleanup is a DB cascade), `uploadPlantPhoto`, `discardUploadedPhoto` (best-effort Storage cleanup), `markCareTaskDoneAction`, `updateSettingsAction` (morning_time rounded to the hour, timezone validated against the real IANA database not a hardcoded list, email format-checked; deliberately does NOT touch `push_enabled`), `setPushEnabledAction` (the only writer of `push_enabled`, driven by `PushSubscribeButton`) | 🟢 |
+| `lib/actions.ts` | `"use server"`: `createPlantAction` (writes `photo_url`, calls `generateCareTasksForPlant`), `deletePlantAction` (deletes the plant's Storage photo; `care_tasks` cleanup is a DB cascade), `uploadPlantPhoto`, `discardUploadedPhoto` (best-effort Storage cleanup), `markCareTaskDoneAction`, `updateSettingsAction` (morning_time rounded to the hour, timezone validated against the real IANA database not a hardcoded list, email format-checked, language validated against `i18n/request.ts`'s `LOCALES` and written to both the DB and the `NEXT_LOCALE` cookie next-intl reads, revalidates the root layout so the switch is immediate; deliberately does NOT touch `push_enabled`), `setPushEnabledAction` (the only writer of `push_enabled`, driven by `PushSubscribeButton`) | 🟢 |
 | `lib/anthropic.ts` | Claude client (`claude-sonnet-5`, tool-forced structured output): `identifyPlant` (vision → species/calibrated confidence/candidates; system prompt forces a look-alike check + `key_features` reasoning before the answer, low temperature), `generateCareProfile` (now includes `harvest_days`) | 🟢 |
 | `lib/care.ts` | Reminder engine. Local-calendar date/season math via `Intl.DateTimeFormat`, timezone threaded through from `settings.timezone` (fetched once per entry point) rather than a hardcoded constant or server-runtime UTC — see L11. `intervalDaysFor` (water/rotate/repot/harvest; `prune` has no interval data), `generateCareTasksForPlant` (called once, on plant create), `getDueTasks` (today + overdue, flagged), `markCareTaskDone` (today + current-season interval; no-ops gracefully if the task/plant/species was deleted concurrently), `currentLocalDateAndHour` (used by the morning cron to decide "is it currently the user's morning?") | 🟢 |
 | `lib/settings.ts` | `getSettings()` — the single settings row (schema.sql guarantees exactly one exists) | 🟢 |
+| `lib/translations.ts` | `getLocalizedSpeciesCare(species, locale)` — fetch-or-generate-and-cache a species' free-text care fields translated into a non-English locale (`species_care_translations`); English stays canonical, untouched | 🟢 |
 | `lib/push.ts` | VAPID-configured `web-push`. `saveSubscription`/`removeSubscription`, `sendPushToAll(payload)` — sends to every stored subscription in parallel, prunes ones confirmed dead (404/410/400, or a DNS/connection failure) rather than retrying garbage forever (see L14) | 🟢 |
 | `lib/email.ts` | `sendMorningEmail(to, tasks)` via Resend — returns `false` (doesn't throw) if `RESEND_API_KEY`/`REMINDER_EMAIL_FROM` aren't set, so callers can report accurate "did this actually send" status instead of assuming success | 🟢 |
 
@@ -64,6 +67,7 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder · ⚪ planned.
 | `supabase/seed.sql` | 36 seeded plant care profiles (28 houseplants + 10 kitchen herbs) — copy/paste path for the SQL editor. `harvest_days` values live in `migration_002_harvest_days.sql`, not this file (see its header note). | 🟢 |
 | `supabase/migration_002_harvest_days.sql` | Adds `species_care.harvest_days` + backfills the 10 herbs — **run once on live project, confirmed done**. Idempotent. | 🟢 |
 | `supabase/migration_003_morning_send_tracking.sql` | Adds `settings.last_morning_send_date` (the cron's atomic dedup-claim column) — **NOT YET run on live project, blocks `/api/cron/morning` from working at all** (it now fails loudly rather than silently skipping the guard — see L13). Idempotent. Already folded into `schema.sql` for fresh installs. | 🟡 **user action needed** |
+| `supabase/migration_004_i18n.sql` | Adds `settings.language` + `species_care_translations` table — **NOT YET run on live/dev project; every Settings save 500s without it**, not just language switching (Phase 5, verified live). Idempotent. Already folded into `schema.sql` for fresh installs. | 🟡 **user action needed** |
 | `scripts/run-seed.mjs` | Executable seeder (same 36 species as `seed.sql`, via supabase-js upsert since PostgREST has no raw-SQL exec) — **run on live project, confirmed working**. Keep both files in sync if a species is added. | 🟢 |
 | `scripts/create-storage-bucket.mjs` | Creates the public `plant-photos` Storage bucket (JPEG/PNG/WebP/GIF, 8MB cap). Run once: `npm run storage:bucket`. Idempotent. | 🟢 |
 
