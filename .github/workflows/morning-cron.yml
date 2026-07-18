@@ -19,9 +19,12 @@ jobs:
             echo "::error::APP_URL and/or CRON_SECRET repo secrets are not set (repo Settings → Secrets and variables → Actions)."
             exit 1
           fi
-          http_code=$(curl -sS -o /tmp/cron-response.json -w "%{http_code}" -X POST \
+          if ! http_code=$(curl -sS --max-time 30 -o /tmp/cron-response.json -w "%{http_code}" -X POST \
             "${{ secrets.APP_URL }}/api/cron/morning" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"); then
+            echo "::error::curl failed to reach ${{ secrets.APP_URL }} (timeout or connection error)."
+            exit 1
+          fi
           echo "HTTP $http_code"
           cat /tmp/cron-response.json
           echo

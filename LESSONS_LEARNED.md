@@ -251,3 +251,30 @@ zero-size `getBoundingClientRect()` even though each element's own computed
 `display` looks correct — if a rect check comes back all zeros, walk up the
 `parentElement` chain checking `getComputedStyle(el).display` at each level
 before assuming the element itself is misconfigured.
+
+## L19 — Edge Case Destroyer pass on Phase 5 (cron/plant-ID/illustrations/toggle)
+**Context:** Ran per Commandments before calling Phase 5's fixes done.
+**Found (fixed):**
+1. `identifyPlant`'s defensive clamping (L8) only covered `confidence` —
+   `raw.scientific_name.toLowerCase()` and the candidate dedup loop assumed
+   `scientific_name`/`common_name` always exist. A malformed/truncated
+   tool_use block (still possible — `tool_choice` biases output, doesn't
+   validate it, per L8) would throw a `TypeError` instead of degrading
+   gracefully. Now defaults every string field to `""` before touching it.
+2. `.github/workflows/morning-cron.yml`'s new error reporting had two gaps:
+   no `curl --max-time`, so a hung endpoint blocks until GitHub's ~6h job
+   timeout instead of failing fast; and a pre-connection failure (DNS/TLS)
+   leaves `http_code` empty, so `[ "$http_code" -ge 400 ]` throws "integer
+   expression expected" instead of the intended clear error. Added
+   `--max-time 30` and an explicit `curl ... || { echo ::error; exit 1; }`
+   check before treating `$http_code` as a number.
+3. `app/api/identify/route.ts` spread the entire `ClaudeIdentifyResult` into
+   the client-facing `IdentifyResult` response, leaking `look_alike_check`
+   (Claude's internal reasoning aid) into the network response with no type
+   declaring it exists. Switched to an explicit field whitelist.
+**Prevention:** "Defensive clamping" needs to cover every field a `throw`
+could reach, not just the one the original bug report was about — an Edge
+Case Destroyer pass exists specifically to catch that a fix for one field
+didn't get applied to its siblings. When spreading a richer internal type
+into a narrower public one, whitelist explicitly; a spread silently carries
+along whatever the internal type grows next.

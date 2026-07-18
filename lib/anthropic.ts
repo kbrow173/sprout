@@ -147,18 +147,28 @@ export async function identifyPlant(
   const raw = toolUse.input as ClaudeIdentifyResult;
 
   // Defensive clamping — Claude's tool schema is a strong hint, not a guarantee.
+  // A malformed/truncated tool_use block can omit any string field, so nothing
+  // here may assume scientific_name/common_name exist before calling .toLowerCase().
   const confidence = Math.min(1, Math.max(0, raw.confidence ?? 0));
-  const seen = new Set([raw.scientific_name.toLowerCase()]);
+  const scientificName = raw.scientific_name ?? "";
+  const commonName = raw.common_name ?? "";
+  const seen = new Set([scientificName.toLowerCase()]);
   const candidates = (raw.candidates ?? [])
     .filter((c) => {
-      const key = c.scientific_name.toLowerCase();
-      if (!c.scientific_name || seen.has(key)) return false;
+      const key = (c.scientific_name ?? "").toLowerCase();
+      if (!c.scientific_name || !c.common_name || seen.has(key)) return false;
       seen.add(key);
       return true;
     })
     .slice(0, 2);
 
-  return { ...raw, confidence, candidates };
+  return {
+    ...raw,
+    scientific_name: scientificName,
+    common_name: commonName,
+    confidence,
+    candidates,
+  };
 }
 
 export interface GeneratedCareProfile {

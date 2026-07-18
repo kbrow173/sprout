@@ -344,3 +344,18 @@ inaccurate, and the plant illustrations read as too abstract/generic.
   page content inside a `display:none` wrapper in this session's testing —
   not reproduced on the live (pre-i18n) deployment. Not root-caused. See L18.
 - ✅ `npx tsc --noEmit` clean after every code change this phase.
+- ✅ Edge Case Destroyer pass (`general-purpose` agent) on the four fixes
+  above found 1 high, 1 medium, 2 low issues — all fixed:
+  - **High:** `identifyPlant`'s defensive clamping (L8) only covered
+    `confidence` — a malformed tool_use block missing `scientific_name`
+    would throw instead of degrading gracefully. Now every string field
+    defaults to `""` before use.
+  - **Medium:** cron workflow's new error reporting had no `curl --max-time`
+    (a hung endpoint blocks ~6h instead of failing fast) and mishandled a
+    pre-connection failure (empty `$http_code` broke the integer check).
+  - **Low x2:** `/api/identify` was spreading Claude's internal
+    `look_alike_check` field into the public response (now an explicit
+    whitelist); a candidate with an empty `common_name` could render a
+    blank confirm button (now filtered).
+  - Logged as L19 in `LESSONS_LEARNED.md`.
+- ✅ Real-world test checklist: `tests/phase-5-checklist.txt`

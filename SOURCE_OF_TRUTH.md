@@ -80,4 +80,4 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder · ⚪ planned.
 `CLAUDE.md` · `AGENTS.md` (Next.js warning) · `discovery.md` · `plan.md` ·
 `progress.md` · `LESSONS_LEARNED.md` · this file · `tests/phase-0-checklist.txt` ·
 `tests/phase-1-checklist.txt` · `tests/phase-2-checklist.txt` · `tests/phase-3-checklist.txt` ·
-`tests/phase-4-checklist.txt`.
+`tests/phase-4-checklist.txt` · `tests/phase-5-checklist.txt`.

@@ -1,0 +1,71 @@
+SPROUT — PHASE 5 REAL-WORLD TEST CHECKLIST
+(Cron fix, plant ID accuracy, illustration redesign, toggle fix. Some of this
+needs your real phone/browser — a fresh incognito session for the i18n check
+can't be simulated by an automated tool.)
+
+BEFORE YOU START — two setup steps still pending:
+  [ ] Run supabase/migration_004_i18n.sql in the Supabase SQL editor — the
+      i18n code that's now live expects settings.language and
+      species_care_translations to already exist.
+  [ ] Set the APP_URL and CRON_SECRET repo secrets on GitHub (repo Settings →
+      Secrets and variables → Actions) — cron will keep failing until this
+      is done. Use https://sprout-ten-theta.vercel.app for APP_URL.
+
+MORNING CRON:
+  [ ] GitHub → Actions → "Sprout morning cron" → Run workflow
+  [ ] Confirm it goes green. If it's still red, confirm the error message is
+      now readable (HTTP status + response body), not just a bare exit code
+  [ ] Temporarily unset one of the two repo secrets and re-run — confirm you
+      get the new "APP_URL and/or CRON_SECRET repo secrets are not set"
+      message, then put the secret back
+
+PLANT ID ACCURACY:
+  [ ] Photograph a plant you're confident about (e.g. a snake plant, an
+      obvious succulent) — confirm it auto-confirms with a short "key
+      features" line under the name that actually matches what you see
+  [ ] Photograph something genuinely confusable (a pothos/philodendron, or
+      any plant you know has a close look-alike) — confirm you get the "not
+      100% sure" candidate list more often than before, instead of a single
+      confident (and possibly wrong) guess
+  [ ] On a confident result, tap "Not quite" — confirm you see other options
+      instead of being forced to retake the photo (only true retake if there
+      really are no alternates)
+  [ ] Photograph something that isn't a plant at all (your hand, a wall) —
+      confirm you get the "couldn't find a plant" message, not a wrong guess
+
+ILLUSTRATIONS:
+  [ ] Open the Garden grid — confirm every plant's illustration reads
+      clearly as its actual type at the small card size (not just as "a
+      green blob")
+  [ ] Open a plant's detail page (bigger illustration) — check the
+      trailing/draping ones specifically: string-of-pearls, any succulent,
+      any vine/pothos — confirm the foliage is fully visible, not clipped by
+      the pot
+  [ ] Add a new plant via manual search — scroll the species list, confirm
+      the small illustrations next to each name look right on a plain white
+      background too (not just inside the green circle badges)
+
+SETTINGS TOGGLE:
+  [ ] Open Settings — compare the "Phone notifications" toggle against the
+      "Email backup" toggle directly above/below it. Both should look
+      pixel-identical in their on and off positions
+
+I18N (open bug — L18 in LESSONS_LEARNED.md):
+  [ ] Open Settings in a fresh incognito/private window (no existing locale
+      cookie) — confirm the page actually renders (toggles, morning time,
+      timezone all visible), not blank
+  [ ] If it IS blank/broken in incognito: that confirms L18 is a real,
+      live bug, not just an artifact of the automated test browser used
+      during development — report back so it gets prioritized
+
+EDGE CASES (try to break it):
+  [ ] Photograph a very blurry/dark photo of a plant — confirm you get a
+      low-confidence result with candidates, not a crash or a confident-sounding
+      wrong answer
+  [ ] Rapid-fire: pick a photo, then immediately pick a different one before
+      the first finishes identifying — confirm only the second photo's result
+      shows (no flicker back to the first, no mixed-up state)
+
+REPORT BACK: whether plant ID felt noticeably more trustworthy, whether any
+illustration still looks wrong for its species, and the incognito Settings
+result above.

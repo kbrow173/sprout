@@ -81,8 +81,15 @@ export async function POST(request: Request): Promise<Response> {
         { status: 422 }
       );
     }
+    // Explicit whitelist, not a spread — identified also carries look_alike_check
+    // (Claude's internal reasoning aid, lib/anthropic.ts), which isn't part of the
+    // public IdentifyResult contract and shouldn't leak into the response.
     const result: IdentifyResult = {
-      ...identified,
+      common_name: identified.common_name,
+      scientific_name: identified.scientific_name,
+      key_features: identified.key_features,
+      confidence: identified.confidence,
+      candidates: identified.candidates,
       uncertain: identified.confidence < CONFIDENCE_THRESHOLD,
     };
     return Response.json(result);
