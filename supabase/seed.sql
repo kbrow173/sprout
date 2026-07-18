@@ -254,7 +254,7 @@ values
  '["Don''t overwater — root rot is the main risk", "Don''t expect fast growth — it''s a slow, patient grower"]',
  'seed'),
 
-('Basil', 'Ocimum basilicum', 'herb', 'easy', 'bright', 3, 5, 'Average humidity is fine.',
+('Basil', 'Ocimum basilicum', 'basil', 'easy', 'bright', 3, 5, 'Average humidity is fine.',
  'Rich, well-draining potting mix.', 7, 6,
  'Non-toxic — it''s food!',
  'Root a 4" stem cutting in a glass of water; roots appear within a week.',
@@ -264,7 +264,7 @@ values
  '["Don''t let it dry out completely — it wilts fast and dramatically", "Don''t let it go to flower if you want the best-tasting leaves"]',
  'seed'),
 
-('Mint', 'Mentha spicata', 'herb', 'easy', 'bright', 3, 6, 'Average humidity is fine.',
+('Mint', 'Mentha spicata', 'mint', 'easy', 'bright', 3, 6, 'Average humidity is fine.',
  'Rich, moisture-retentive potting mix.', 7, 8,
  'Non-toxic — it''s food!',
  'Root a stem cutting in water — mint roots almost embarrassingly fast.',
@@ -274,7 +274,7 @@ values
  '["Don''t let it dry out — leaves wilt and crisp quickly", "Don''t plant it with other herbs in one pot — it''ll take over"]',
  'seed'),
 
-('Rosemary', 'Salvia rosmarinus', 'herb', 'medium', 'bright', 6, 12, 'Prefers dry air — good airflow prevents mildew.',
+('Rosemary', 'Salvia rosmarinus', 'rosemary', 'medium', 'bright', 6, 12, 'Prefers dry air — good airflow prevents mildew.',
  'Fast-draining, slightly sandy mix — think half potting soil, half cactus mix.', 10, 12,
  'Non-toxic — it''s food!',
  'Root a 4" non-flowering stem tip in water or moist perlite; can be slow (a few weeks).',
@@ -284,7 +284,7 @@ values
  '["Don''t overwater — root rot is the #1 killer of indoor rosemary", "Don''t crowd it against a damp window — needs airflow"]',
  'seed'),
 
-('Thyme', 'Thymus vulgaris', 'herb', 'easy', 'bright', 7, 14, 'Prefers dry air.',
+('Thyme', 'Thymus vulgaris', 'thyme', 'easy', 'bright', 7, 14, 'Prefers dry air.',
  'Fast-draining, slightly sandy mix.', 10, 12,
  'Non-toxic — it''s food!',
  'Root a 3" stem cutting in water, or divide an established clump at the roots.',
@@ -304,7 +304,7 @@ values
  '["Don''t overwater — soggy soil is the main risk", "Don''t let it flower if you''re growing it mainly to cook with"]',
  'seed'),
 
-('Parsley', 'Petroselinum crispum', 'herb', 'medium', 'bright', 4, 7, 'Average humidity is fine.',
+('Parsley', 'Petroselinum crispum', 'parsley', 'medium', 'bright', 4, 7, 'Average humidity is fine.',
  'Rich, well-draining potting mix.', 7, 5,
  'Non-toxic — it''s food!',
  'Best grown from seed — its long taproot makes it resent transplanting or division.',
@@ -324,7 +324,7 @@ values
  '["Don''t let it get too hot or dry — both trigger rapid bolting", "Don''t expect one plant to last long — cilantro is fast and short-lived by nature"]',
  'seed'),
 
-('Chives', 'Allium schoenoprasum', 'herb', 'easy', 'bright', 5, 9, 'Average humidity is fine.',
+('Chives', 'Allium schoenoprasum', 'chives', 'easy', 'bright', 5, 9, 'Average humidity is fine.',
  'Rich, well-draining potting mix.', 10, 12,
  'Non-toxic to people — it''s food! Toxic to cats and dogs, though, like other alliums.',
  'Divide an established clump into smaller sections, each with roots and a few blades.',

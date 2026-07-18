@@ -243,7 +243,7 @@ const species = [
     ["One of the best low-light palms for indoors", "Let the top 2 inches of soil dry before watering"],
     ["Don't overwater — root rot is the main risk", "Don't expect fast growth — it's a slow, patient grower"]),
 
-  s("Basil", "Ocimum basilicum", "herb", "easy", "bright", 3, 5,
+  s("Basil", "Ocimum basilicum", "basil", "easy", "bright", 3, 5,
     "Average humidity is fine.",
     "Rich, well-draining potting mix.", 7, 6,
     "Non-toxic — it's food!",
@@ -253,7 +253,7 @@ const species = [
     ["Give it your sunniest windowsill — basil wants as much light as it can get", "Pinch flower buds off promptly to keep leaves tasty", "Harvest often — it wants to be picked"],
     ["Don't let it dry out completely — it wilts fast and dramatically", "Don't let it go to flower if you want the best-tasting leaves"], 5),
 
-  s("Mint", "Mentha spicata", "herb", "easy", "bright", 3, 6,
+  s("Mint", "Mentha spicata", "mint", "easy", "bright", 3, 6,
     "Average humidity is fine.",
     "Rich, moisture-retentive potting mix.", 7, 8,
     "Non-toxic — it's food!",
@@ -263,7 +263,7 @@ const species = [
     ["Keep soil consistently moist — mint is thirstier than most herbs", "Keep it in its own pot — mint spreads aggressively", "Trim regularly to keep it bushy and productive"],
     ["Don't let it dry out — leaves wilt and crisp quickly", "Don't plant it with other herbs in one pot — it'll take over"], 7),
 
-  s("Rosemary", "Salvia rosmarinus", "herb", "medium", "bright", 6, 12,
+  s("Rosemary", "Salvia rosmarinus", "rosemary", "medium", "bright", 6, 12,
     "Prefers dry air — good airflow prevents mildew.",
     "Fast-draining, slightly sandy mix — think half potting soil, half cactus mix.", 10, 12,
     "Non-toxic — it's food!",
@@ -273,7 +273,7 @@ const species = [
     ["Give it your sunniest, brightest spot — it wants as much light as basil", "Let the soil dry out between waterings — better too dry than too wet", "Good airflow prevents powdery mildew"],
     ["Don't overwater — root rot is the #1 killer of indoor rosemary", "Don't crowd it against a damp window — needs airflow"], 14),
 
-  s("Thyme", "Thymus vulgaris", "herb", "easy", "bright", 7, 14,
+  s("Thyme", "Thymus vulgaris", "thyme", "easy", "bright", 7, 14,
     "Prefers dry air.",
     "Fast-draining, slightly sandy mix.", 10, 12,
     "Non-toxic — it's food!",
@@ -293,7 +293,7 @@ const species = [
     ["Let the top inch of soil dry before watering", "Pinch off flower buds to keep the leaves flavorful", "Give it a sunny spot — flavor intensifies with more light"],
     ["Don't overwater — soggy soil is the main risk", "Don't let it flower if you're growing it mainly to cook with"], 10),
 
-  s("Parsley", "Petroselinum crispum", "herb", "medium", "bright", 4, 7,
+  s("Parsley", "Petroselinum crispum", "parsley", "medium", "bright", 4, 7,
     "Average humidity is fine.",
     "Rich, well-draining potting mix.", 7, 5,
     "Non-toxic — it's food!",
@@ -313,7 +313,7 @@ const species = [
     ["Keep soil evenly moist — it bolts to seed faster when stressed by dryness or heat", "Sow a new batch every few weeks for a steady supply", "Harvest often, before it has a chance to flower"],
     ["Don't let it get too hot or dry — both trigger rapid bolting", "Don't expect one plant to last long — cilantro is fast and short-lived by nature"], 5),
 
-  s("Chives", "Allium schoenoprasum", "herb", "easy", "bright", 5, 9,
+  s("Chives", "Allium schoenoprasum", "chives", "easy", "bright", 5, 9,
     "Average humidity is fine.",
     "Rich, well-draining potting mix.", 10, 12,
     "Non-toxic to people — it's food! Toxic to cats and dogs, though, like other alliums.",

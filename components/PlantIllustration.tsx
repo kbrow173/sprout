@@ -29,6 +29,12 @@ export type IllustrationKey =
   | "pilea"
   | "palm"
   | "herb"
+  | "basil"
+  | "rosemary"
+  | "thyme"
+  | "parsley"
+  | "chives"
+  | "mint"
   | "orchid"
   | "fern"
   | "generic";
@@ -118,6 +124,19 @@ function Pinna({ fill, transform }: Placed) {
   return <ellipse rx="4.2" ry="2.1" fill={fill} transform={transform} />;
 }
 
+/** A broad rounded-tip oval leaf (basil) — base at origin, pointing up, with a center vein. */
+function RoundLeaf({ fill, transform }: Placed) {
+  return (
+    <g transform={transform}>
+      <path
+        d="M0,0 C-11,-5 -15,-16 -12,-27 C-10,-36 -4,-42 0,-44 C4,-42 10,-36 12,-27 C15,-16 11,-5 0,0 Z"
+        fill={fill}
+      />
+      <path d="M0,-4 L0,-38" stroke="#ffffff" strokeWidth="1" opacity="0.4" strokeLinecap="round" />
+    </g>
+  );
+}
+
 /** A small pointed herb leaflet, base at the origin. */
 function HerbUnit({ fill, transform }: Placed) {
   return (
@@ -134,14 +153,22 @@ function OrchidPetal({ fill, transform }: Placed) {
   return <ellipse rx="4.5" ry="8" cy="-6" fill={fill} transform={transform} />;
 }
 
+// Rim fill deliberately does NOT reuse SPROUT_200/100 — those match the
+// bg-sprout-100 circle every illustration sits on, so a rim in that color
+// blends invisibly into its own backdrop and reads as a floating disconnected
+// lid (only the white highlight bar above it stays visible). This is a
+// distinct warm sage, plus the rim now sits low/narrow enough to overlap the
+// body's flat top edge (y=99, x51–109) rather than overhanging past it.
+const POT_RIM = "#dce8de";
+
 function Pot() {
   return (
     <g>
       <ellipse cx="80" cy="147" rx="33" ry="6" fill="#000000" opacity="0.06" />
       <path d="M51 99c-2 15-3 30 2 40a11 11 0 0 0 9.9 6h34.2A11 11 0 0 0 107 139c5-10 4-25 2-40Z" fill="#ffffff" />
-      <path d="M51 99c-2 15-3 30 2 40a11 11 0 0 0 5 5.4C54 132 53 115 56 99Z" fill="#eef9f0" opacity="0.8" />
-      <rect x="46" y="88" width="68" height="15" rx="7.5" fill="#eef9f0" />
-      <rect x="46" y="88" width="68" height="6" rx="3" fill="#ffffff" />
+      <path d="M51 99c-2 15-3 30 2 40a11 11 0 0 0 5 5.4C54 132 53 115 56 99Z" fill="#eef3ee" opacity="0.8" />
+      <rect x="49" y="90" width="62" height="13" rx="6.5" fill={POT_RIM} />
+      <rect x="49" y="90" width="62" height="5" rx="2.5" fill="#ffffff" />
     </g>
   );
 }
@@ -330,6 +357,9 @@ function Leaves({ variant }: { variant: IllustrationKey }) {
       );
 
     case "herb":
+      // Generic fallback for any herb without its own variant below (e.g.
+      // cilantro, dill, oregano) — the six named herbs each get a shape that
+      // reflects their real growth habit instead of sharing this one.
       return (
         <g>
           <path d="M70,98 C68,90 66,84 62,78" stroke={FOREST_500} strokeWidth="2" fill="none" strokeLinecap="round" />
@@ -344,6 +374,139 @@ function Leaves({ variant }: { variant: IllustrationKey }) {
           <HerbUnit fill={SPROUT_600} transform="translate(98,78) rotate(20) scale(1.1)" />
         </g>
       );
+
+    case "basil":
+      // Broad round leaf pairs stacked on a single stem — basil's real habit.
+      return (
+        <g>
+          <path d="M80,98 C80,86 80,76 80,66" stroke={FOREST_600} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+          <RoundLeaf fill={SPROUT_600} transform="translate(80,88) rotate(-38) scale(0.85)" />
+          <RoundLeaf fill={SPROUT_600} transform="translate(80,88) rotate(38) scale(0.85)" />
+          <RoundLeaf fill={FOREST_500} transform="translate(80,74) rotate(-30) scale(1.05)" />
+          <RoundLeaf fill={FOREST_500} transform="translate(80,74) rotate(30) scale(1.05)" />
+          <RoundLeaf fill={SPROUT_500} transform="translate(80,66) rotate(0) scale(0.95)" />
+        </g>
+      );
+
+    case "mint":
+      // Pointed leaf pairs on a single tall stem — same stacked habit as
+      // basil, but a pointed (not round) leaf, distinguishing the two.
+      return (
+        <g>
+          <path d="M80,98 C80,84 80,70 80,58" stroke={FOREST_600} strokeWidth="2.4" fill="none" strokeLinecap="round" />
+          <HerbUnit fill={SPROUT_600} transform="translate(80,86) rotate(-42) scale(1.5)" />
+          <HerbUnit fill={SPROUT_600} transform="translate(80,86) rotate(42) scale(1.5)" />
+          <HerbUnit fill={FOREST_500} transform="translate(80,70) rotate(-34) scale(1.65)" />
+          <HerbUnit fill={FOREST_500} transform="translate(80,70) rotate(34) scale(1.65)" />
+          <HerbUnit fill={SPROUT_500} transform="translate(80,58) rotate(0) scale(1.3)" />
+        </g>
+      );
+
+    case "rosemary": {
+      // Woody upright sprigs, densely lined with tiny needle blades — a
+      // bottlebrush silhouette, nothing like a broad-leaf herb.
+      const sprig = (x: number, topY: number, fill1: string, fill2: string) => (
+        <>
+          <path d={`M${x},98 L${x},${topY}`} stroke={FOREST_700} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          {[0, 1, 2, 3, 4, 5].map((i) => {
+            const y = 98 - i * ((98 - topY) / 6) - 6;
+            const fill = i % 2 === 0 ? fill1 : fill2;
+            return (
+              <g key={i}>
+                <Blade fill={fill} transform={`translate(${x - 1},${y}) rotate(-60) scale(0.2,0.45)`} />
+                <Blade fill={fill} transform={`translate(${x + 1},${y}) rotate(60) scale(0.2,0.45)`} />
+              </g>
+            );
+          })}
+        </>
+      );
+      return (
+        <g>
+          {sprig(66, 44, FOREST_600, FOREST_500)}
+          {sprig(80, 34, FOREST_700, FOREST_600)}
+          {sprig(94, 44, FOREST_600, FOREST_500)}
+        </g>
+      );
+    }
+
+    case "chives": {
+      // Tall, thin, uniform grass-like blades bunched tight — with a small
+      // blossom accent, since chives are one of the few herbs that flower.
+      const blades: [number, number, number, string][] = [
+        [70, -10, 1.05, FOREST_600],
+        [75, -4, 1.15, SPROUT_600],
+        [80, 0, 1.25, FOREST_500],
+        [85, 4, 1.1, SPROUT_500],
+        [90, 10, 1, FOREST_600],
+      ];
+      return (
+        <g>
+          {blades.map(([x, rot, scaleY, fill]) => (
+            <Blade key={x} fill={fill} transform={`translate(${x},98) rotate(${rot}) scale(0.26,${scaleY})`} />
+          ))}
+          <circle cx="80" cy="45" r="4.2" fill={BLOOM_LIGHT} opacity="0.85" />
+        </g>
+      );
+    }
+
+    case "thyme":
+      // Low, wide, trailing mound of tiny leaflets hugging the rim — thyme
+      // grows outward, not upward.
+      return (
+        <g>
+          <path d="M60,96 C50,92 42,90 34,92" stroke={FOREST_500} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M100,96 C110,92 118,90 126,92" stroke={FOREST_500} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M70,96 C68,88 64,82 56,78" stroke={FOREST_600} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M90,96 C92,88 96,82 104,78" stroke={FOREST_600} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M80,96 C80,86 80,76 80,68" stroke={FOREST_600} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          {(
+            [
+              [40, 90],
+              [48, 86],
+              [56, 92],
+              [64, 80],
+              [72, 86],
+              [80, 72],
+              [80, 82],
+              [88, 86],
+              [96, 80],
+              [104, 92],
+              [112, 86],
+              [120, 90],
+            ] as const
+          ).map(([x, y], i) => (
+            <Pinna
+              key={`${x}-${y}`}
+              fill={i % 2 === 0 ? SPROUT_500 : FOREST_500}
+              transform={`translate(${x},${y}) rotate(${((i % 5) - 2) * 15}) scale(0.7)`}
+            />
+          ))}
+        </g>
+      );
+
+    case "parsley": {
+      // Dense, rounder, higher-sitting frilly clumps — a curly-leaf silhouette
+      // distinct from thyme's low wide mat.
+      const frill = (cx: number, cy: number, fill1: string, fill2: string) => (
+        <>
+          <Pinna fill={fill1} transform={`translate(${cx - 4},${cy - 2}) rotate(-40) scale(0.85)`} />
+          <Pinna fill={fill2} transform={`translate(${cx + 4},${cy - 2}) rotate(40) scale(0.85)`} />
+          <Pinna fill={fill1} transform={`translate(${cx - 6},${cy - 8}) rotate(-70) scale(0.75)`} />
+          <Pinna fill={fill2} transform={`translate(${cx + 6},${cy - 8}) rotate(70) scale(0.75)`} />
+          <Pinna fill={fill1} transform={`translate(${cx},${cy - 10}) rotate(0) scale(0.8)`} />
+        </>
+      );
+      return (
+        <g>
+          <path d="M68,98 C66,88 64,80 60,72" stroke={FOREST_600} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          <path d="M80,98 C80,86 80,74 80,64" stroke={FOREST_600} strokeWidth="2" fill="none" strokeLinecap="round" />
+          <path d="M92,98 C94,88 96,80 100,72" stroke={FOREST_600} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          {frill(60, 72, SPROUT_600, SPROUT_500)}
+          {frill(80, 64, FOREST_500, SPROUT_600)}
+          {frill(100, 72, SPROUT_600, SPROUT_500)}
+        </g>
+      );
+    }
 
     case "orchid":
       return (
@@ -439,6 +602,12 @@ export default function PlantIllustration({
     "pilea",
     "palm",
     "herb",
+    "basil",
+    "rosemary",
+    "thyme",
+    "parsley",
+    "chives",
+    "mint",
     "orchid",
     "fern",
   ];

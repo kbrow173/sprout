@@ -413,3 +413,32 @@ Done:
 - ✅ Real-world test checklist: `tests/phase-6-checklist.txt`
 - ⏳ Live browser verification blocked on the migration (user step); user tests
   on device after running it.
+
+## Phase 6.1 — Illustration fixes: floating pot rim, herb species collision  ✅ complete
+User flagged from a garden-grid screenshot: pots looked like they had a
+disconnected floating lid, and most herbs (Basil, Rosemary, Thyme, Parsley,
+Chives, Peppermint) rendered as the exact same icon.
+Done:
+- ✅ Root-caused the rim bug: `PlantIllustration.tsx`'s rim fill (`#eef9f0`)
+  was identical to `--color-sprout-100`, the circle backdrop every
+  illustration sits in — the rim was invisible against its own background.
+  New `POT_RIM` (`#dce8de`) + tightened rim geometry to overlap the body's
+  flat top edge instead of overhanging past it.
+- ✅ Added 6 herb-specific illustration variants (basil, rosemary, thyme,
+  parsley, chives, mint) reflecting real growth habit — round vs. pointed
+  stacked leaf pairs, dense needle sprigs, tall grass blades, low wide mound
+  vs. denser rounder clump. `herb` stays as the generic fallback for herbs
+  outside this set.
+- ✅ Kept in sync across all 5 places that needed to move together:
+  `components/PlantIllustration.tsx`, `lib/anthropic.ts`'s
+  `ILLUSTRATION_KEYS`, `supabase/seed.sql`, `scripts/run-seed.mjs`, and
+  `supabase/migration_006_herb_illustrations.sql` (live-DB backfill for both
+  `species_care` and the denormalized `plants.illustration_key`).
+- ✅ Previewed the 6 new icons standalone (Artifact) before touching the live
+  DB, per user request. Migration run and confirmed by the user.
+- ✅ `npx tsc --noEmit` clean. Verified live via DOM inspection (dev server
+  screenshot tool was stuck, unrelated to the app) — each herb now renders a
+  structurally distinct element count matching its own code path, confirming
+  no herb is silently falling back to the shared icon.
+- ✅ Logged as L23 (color token matching its own backdrop) and L24 (shared
+  fallback key silently collapsing distinct entities) in `LESSONS_LEARNED.md`.

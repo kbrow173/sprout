@@ -362,3 +362,46 @@ from the *current* season + stored factor at render time; the stored
 from live inputs. A persisted derived column is a cache — fine for driving the
 next scheduled event, but don't surface it as the present-tense truth without
 recomputing.
+
+## L23 — A color token that matches its own backdrop renders as invisible, not as intended
+**Context:** `PlantIllustration.tsx`'s pot rim used `#eef9f0` as its fill — the
+exact same hex as `--color-sprout-100`, the circle background every
+illustration renders inside (`bg-sprout-100`). The rim shape was technically
+present but visually disappeared into its own backdrop, leaving only the white
+highlight bar above it and the white pot body below it — which read as a
+"floating disconnected lid" (user-flagged from a screenshot). The math/geometry
+was fine; the bug was invisible in code review because nothing about the SVG
+markup itself looked wrong.
+**Decision:** Introduced a distinct `POT_RIM` constant (`#dce8de`) instead of
+reusing a design-system token, specifically because that token is also used as
+a container background elsewhere in the same composition.
+**Prevention:** When a shape's fill/stroke reuses a design-token color, check
+what it's actually rendered on top of, not just whether the color "fits the
+palette." A color can be correct in isolation and invisible in context. This
+class of bug won't show up in a code diff or a type check — it needs an actual
+visual render (screenshot or the user's eyes) to catch.
+
+## L24 — One shared fallback key silently collapses N distinct entities into one look
+**Context:** Six herb species (Basil, Rosemary, Thyme, Parsley, Chives, Mint/
+Peppermint) all had `illustration_key = 'herb'`, so they rendered pixel-identical
+icons despite being visually very different real plants — user-flagged directly
+("plants don't resemble the plants they're trying to portray"). This happened
+because `ILLUSTRATION_KEYS` (the enum Claude's `care_profile` tool picks from)
+only had one generic herb bucket; there was nowhere more specific to put them.
+**Decision:** Added 6 named herb variants, kept `herb` as an explicit fallback
+for herbs not in that set (cilantro, oregano, dill, ...) rather than trying to
+enumerate every possible herb. Fixing it touched five places that all had to
+move together: the SVG library, Claude's tool schema enum
+(`lib/anthropic.ts`), the seed data (`seed.sql` AND `scripts/run-seed.mjs` —
+two files carry the same 36 species, see L-note in `SOURCE_OF_TRUTH.md`), and
+a live-DB backfill migration for both `species_care` and the *denormalized*
+`plants.illustration_key` (a plant copies its species' key at add-time
+specifically so it doesn't change retroactively — which is exactly why an
+existing plant needed its own backfill, not just its species row).
+**Prevention:** When N different things share one enum bucket "for now,"
+that's a visible-quality debt, not a style nit — check whether the shared
+bucket is hiding real, user-noticeable differences before deciding it's fine.
+And: any fix to a value that's denormalized at write-time (for a documented
+reason) needs a backfill on BOTH the source-of-truth table and every place
+that copied it — updating only the source leaves already-created records
+stuck on the old value forever.
