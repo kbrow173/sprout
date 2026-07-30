@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Check } from "lucide-react";
+import { Search, Check, Loader2, Sparkles } from "lucide-react";
 import { createPlantAction } from "@/lib/actions";
 import PlantIllustration from "@/components/PlantIllustration";
 import PlantQuestions, { Label } from "@/components/PlantQuestions";
@@ -15,6 +15,8 @@ import type { SpeciesCare } from "@/lib/types";
 export default function ManualAddForm({ species }: { species: SpeciesCare[] }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<SpeciesCare | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -25,6 +27,27 @@ export default function ManualAddForm({ species }: { species: SpeciesCare[] }) {
         s.scientific_name.toLowerCase().includes(q)
     );
   }, [query, species]);
+
+  async function generateForQuery() {
+    const name = query.trim();
+    if (!name) return;
+    setGenerating(true);
+    setGenerateError(null);
+    try {
+      const res = await fetch("/api/care-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ common_name: name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Couldn't generate a care guide for that plant.");
+      setSelected(data as SpeciesCare);
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   return (
     <form action={createPlantAction} className="space-y-6">
@@ -47,7 +70,7 @@ export default function ManualAddForm({ species }: { species: SpeciesCare[] }) {
         <div className="mt-3 max-h-72 space-y-1.5 overflow-y-auto rounded-3xl border border-line bg-surface p-2 shadow-soft">
           {filtered.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted">
-              No matches — try a different spelling.
+              No matches in our library.
             </p>
           ) : (
             filtered.map((s) => {
@@ -78,6 +101,32 @@ export default function ManualAddForm({ species }: { species: SpeciesCare[] }) {
             })
           )}
         </div>
+
+        {query.trim() && !selected ? (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={generateForQuery}
+              disabled={generating}
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-sprout-300 bg-sprout-100/60 px-4 py-3 text-sm font-semibold text-forest-700 transition-colors hover:bg-sprout-100 disabled:opacity-60"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" strokeWidth={2.4} />
+                  Asking Claude about &quot;{query.trim()}&quot;…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-4" strokeWidth={2.4} />
+                  Can&apos;t find it? Generate a care guide for &quot;{query.trim()}&quot;
+                </>
+              )}
+            </button>
+            {generateError ? (
+              <p className="mt-2 text-center text-xs font-medium text-red-600">{generateError}</p>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       {selected ? <PlantQuestions species={selected} /> : null}

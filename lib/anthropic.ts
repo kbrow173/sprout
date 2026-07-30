@@ -71,8 +71,8 @@ export async function identifyPlant(
 ): Promise<ClaudeIdentifyResult> {
   const message = await client().messages.create({
     model: MODEL,
-    max_tokens: 1024,
-    temperature: 0.4,
+    max_tokens: 2048,
+    thinking: { type: "adaptive" },
     system: IDENTIFY_SYSTEM_PROMPT,
     tools: [
       {
@@ -127,7 +127,9 @@ export async function identifyPlant(
         },
       },
     ],
-    tool_choice: { type: "tool", name: "identify_plant" },
+    // Forced tool_choice is incompatible with extended thinking, so this relies
+    // on the prompt (not the API) to guarantee the tool call.
+    tool_choice: { type: "auto" },
     messages: [
       {
         role: "user",
@@ -138,7 +140,7 @@ export async function identifyPlant(
           },
           {
             type: "text",
-            text: "Identify the houseplant in this photo. Use identify_plant to report your answer.",
+            text: "Identify the houseplant in this photo, including less-common houseplants and succulents (e.g. Gasteria, Haworthia, Astroloba) — don't default to a more famous look-alike just because it's more common. Think through the visible features before answering. You must always call identify_plant with your answer, even if uncertain.",
           },
         ],
       },
@@ -199,10 +201,14 @@ export interface GeneratedCareProfile {
   donts: string[];
 }
 
-/** Drafts a full care profile for a species not yet in species_care. */
+/**
+ * Drafts a full care profile for a species not yet in species_care.
+ * `scientificName` may be omitted (e.g. a manually-typed name with no
+ * confirmed ID) — Claude resolves and reports its own best scientific_name.
+ */
 export async function generateCareProfile(
   commonName: string,
-  scientificName: string
+  scientificName?: string
 ): Promise<GeneratedCareProfile> {
   const message = await client().messages.create({
     model: MODEL,
@@ -270,7 +276,9 @@ export async function generateCareProfile(
     messages: [
       {
         role: "user",
-        content: `Write a beginner-friendly houseplant care profile for "${commonName}" (${scientificName}). Use care_profile to report it.`,
+        content: scientificName
+          ? `Write a beginner-friendly houseplant care profile for "${commonName}" (${scientificName}). Use care_profile to report it.`
+          : `A user typed in the plant name "${commonName}" without confirming a species via photo ID. Identify the most likely houseplant species they mean (report your best scientific_name and a cleaned-up common_name in the tool call), then write a beginner-friendly care profile for it. Use care_profile to report it.`,
       },
     ],
   });

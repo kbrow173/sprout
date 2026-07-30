@@ -15,17 +15,19 @@ export async function POST(request: Request): Promise<Response> {
   const commonName = typeof body?.common_name === "string" ? body.common_name.trim() : "";
   const scientificName = typeof body?.scientific_name === "string" ? body.scientific_name.trim() : "";
 
-  if (!commonName || !scientificName) {
-    return Response.json({ error: "common_name and scientific_name are required." }, { status: 400 });
+  if (!commonName) {
+    return Response.json({ error: "common_name is required." }, { status: 400 });
   }
 
-  const cached = await getSpeciesByScientificName(scientificName);
-  if (cached) {
-    return Response.json(cached satisfies SpeciesCare);
+  if (scientificName) {
+    const cached = await getSpeciesByScientificName(scientificName);
+    if (cached) {
+      return Response.json(cached satisfies SpeciesCare);
+    }
   }
 
   try {
-    const generated = await generateCareProfile(commonName, scientificName);
+    const generated = await generateCareProfile(commonName, scientificName || undefined);
 
     const { data, error } = await serverClient()
       .from("species_care")
