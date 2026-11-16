@@ -3,10 +3,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Difficulty, LightLevel, NonEnglishLocale, TranslatableCareFields } from "@/lib/types";
 
 /*
-  Claude client for plant ID (vision) + care-profile generation. Both calls
-  force a tool call (tool_choice) instead of asking for prose JSON — this is
-  the reliable way to get structured output back from the Messages API; a
-  "please respond in JSON" prompt can drift or wrap the JSON in prose.
+  Claude client for plant ID (vision) + care-profile generation. Structured
+  output comes back via a tool call rather than prose JSON. Care-profile and
+  translation FORCE the tool (tool_choice: tool); identify uses adaptive
+  thinking, which is incompatible with forced tool_choice, so it relies on the
+  prompt instead. Every result is validated after the call (L8).
 */
 
 let _client: Anthropic | null = null;
@@ -295,10 +296,30 @@ export async function generateCareProfile(
     ? raw.illustration_key
     : "generic";
 
-  // harvest_days only means anything alongside a harvesting note.
-  const harvestDays = raw.harvesting ? raw.harvest_days : null;
+  const scientific = (raw.scientific_name ?? "").trim();
+  if (!scientific) throw new Error("[sprout] generateCareProfile: no scientific_name returned.");
 
-  return { ...raw, illustration_key: illustrationKey, harvest_days: harvestDays };
+  // Numbers drive real schedules, so clamp to sane positive ranges — a 0 or
+  // negative interval would create a task that's due again the moment it's done.
+  const days = (v: unknown, fallback: number, max: number) =>
+    Number.isFinite(v) ? Math.min(max, Math.max(1, Math.round(v as number))) : fallback;
+
+  // harvest_days only means anything alongside a harvesting note.
+  const harvestDays = raw.harvesting ? days(raw.harvest_days, 14, 90) : null;
+
+  return {
+    ...raw,
+    common_name: (raw.common_name ?? "").trim() || commonName,
+    scientific_name: scientific,
+    illustration_key: illustrationKey,
+    water_days_summer: days(raw.water_days_summer, 7, 60),
+    water_days_winter: days(raw.water_days_winter, 14, 90),
+    rotate_days: days(raw.rotate_days, 14, 90),
+    repot_months: days(raw.repot_months, 18, 60),
+    harvest_days: harvestDays,
+    dos: Array.isArray(raw.dos) ? raw.dos : [],
+    donts: Array.isArray(raw.donts) ? raw.donts : [],
+  };
 }
 
 const LOCALE_NAMES: Record<NonEnglishLocale, string> = {

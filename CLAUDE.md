@@ -26,7 +26,9 @@
 - Anthropic SDK, model `claude-sonnet-5`, adaptive thinking, vision
 - web-push (VAPID) + Resend (email backup)
 - Lucide icons; curated SVG plant illustrations
-- Vercel + Vercel Cron (daily morning job)
+- Vercel hosting; hourly **GitHub Actions** cron → `/api/cron/morning` (Vercel
+  Hobby cron is once/day fixed UTC — not used)
+- Vitest for pure logic (`lib/care-math.ts`); CI runs lint/typecheck/test/build
 
 ## Design System
 - **Mostly white** canvas + **forest / light-green** (`forest-*`, `sprout-*` tokens)
@@ -40,7 +42,11 @@
 - **No Serwist** — its webpack plugin conflicts with Next 16 Turbopack. Push uses a
   hand-written `public/sw.js` registered via `components/ServiceWorkerRegister.tsx`.
 - iOS Web Push needs the PWA installed to Home Screen; permission must be requested
-  from a tap handler; morning delivery is a Vercel Cron → `web-push` + Resend.
+  from a tap handler; morning delivery is GitHub Actions (hourly) → cron route
+  (3h catch-up window + once-per-day claim) → `web-push` to every device + Resend.
+- Push is **per-device** (a `push_subscriptions` row = on). No global flag.
+- Supabase: server-only service-role client; RLS on with no policies.
+- Scheduling rules are pure functions in `lib/care-math.ts` — test them there.
 - Claude does both plant ID and care-profile generation; unknown plants are cached
   back into `species_care` (`source='claude'`). Plant.id is a documented upgrade.
 

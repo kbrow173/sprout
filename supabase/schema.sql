@@ -1,6 +1,8 @@
 -- Sprout database schema. Run in the Supabase SQL editor (once).
--- Single-user app, no auth: security is the private project URL + anon key,
--- matching the Wardrobe model. RLS is left permissive on purpose.
+-- Single-user app. The app talks to Supabase ONLY via the service-role key
+-- (server-side), which bypasses RLS. RLS is enabled with no policies at the
+-- bottom of this file so the public anon key can't read/write anything
+-- (migration_007, L31).
 
 create extension if not exists "pgcrypto";
 
@@ -34,6 +36,9 @@ create table if not exists species_care (
 );
 
 create index if not exists species_care_scientific_idx
+  on species_care (lower(scientific_name));
+-- Case-insensitive uniqueness (migration_007, L33).
+create unique index if not exists species_care_scientific_lower_uniq
   on species_care (lower(scientific_name));
 
 -- ---------------------------------------------------------------------------
@@ -137,3 +142,14 @@ create table if not exists settings (
 insert into settings (morning_time, timezone)
 select '07:00', 'America/Chicago'
 where not exists (select 1 from settings);
+
+-- ---------------------------------------------------------------------------
+-- Row Level Security: on, no policies → anon/authenticated get nothing; the
+-- server's service-role key bypasses it (migration_007).
+-- ---------------------------------------------------------------------------
+alter table species_care              enable row level security;
+alter table species_care_translations enable row level security;
+alter table plants                    enable row level security;
+alter table care_tasks                enable row level security;
+alter table push_subscriptions        enable row level security;
+alter table settings                  enable row level security;

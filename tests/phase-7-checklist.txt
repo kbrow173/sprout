@@ -1,0 +1,68 @@
+SPROUT — PHASE 7 (RELIABILITY + HARDENING) REAL-WORLD CHECKLIST
+================================================================
+
+BEFORE YOU START
+[ ] Run supabase/migration_007_rls.sql in the Supabase SQL editor.
+    Run the verify query at the bottom of the file: all 6 rows show rowsecurity = true.
+    If it errors on the unique index, run the duplicate-finder query in the file's
+    comment, delete the extra species row, and re-run.
+[ ] Redeploy to Vercel (new env-free config, but new code).
+[ ] Open the app once on your phone and confirm Today still loads (RLS didn't break anything).
+
+1. BIG PHOTOS SAVE (was: silently dropped over 1MB)
+[ ] On iPhone: Add → Take a photo (full-res camera shot) of a plant.
+[ ] ID result appears within ~10s (should be faster than before).
+[ ] Finish the questions and save.
+[ ] In Supabase → Storage → plant-photos: the newest file is a .jpg, roughly 150–500KB.
+[ ] In Supabase → plants: the new row has photo_url filled in (not null).
+[ ] Portrait photo: open that Storage file — it's upright, not rotated sideways.
+
+2. PUSH IS PER-DEVICE (was: opening Settings on a laptop turned push off everywhere)
+[ ] Phone (Home Screen app): Settings → turn notifications ON.
+[ ] Laptop browser: open Settings. The toggle shows OFF there. Don't touch it.
+[ ] Back on the phone: Settings toggle still shows ON.
+[ ] Trigger a test push (curl -X POST <APP_URL>/api/push/test -H "Authorization: Bearer <CRON_SECRET>").
+    Phone receives it.
+[ ] In Safari (NOT the Home Screen app) on iPhone, open Settings:
+    shows "Add Sprout to your Home Screen first" instead of a toggle.
+[ ] Deny notification permission on some browser, tap the toggle:
+    a short red "Notifications are blocked…" message appears under it.
+
+3. MORNING REMINDER CATCH-UP (was: a late GitHub run skipped the whole day)
+[ ] GitHub → Actions → "Sprout morning cron": schedule now shows runs at :17 past the hour.
+[ ] Next morning: reminder arrives once, between your morning time and ~3h after.
+[ ] Re-run the workflow manually right after: response says "already sent today", no second push.
+[ ] The push title counts PLANTS: a plant with two tasks due counts once.
+
+4. SYNONYM SEARCH (was: 502)
+[ ] Add → "Choose from our plant library" → type: devil's ivy
+[ ] Tap "Generate a care guide". Within ~10s you land on the questions for Golden Pothos.
+[ ] Supabase → species_care: no new duplicate Epipremnum aureum row was created.
+
+5. WATERING DOUBLE-TAP (was: each extra tap shrank the learned rhythm)
+[ ] Open a plant page. Tap "I watered it just now" rapidly 3 times.
+[ ] The button dims while saving (can't be re-tapped mid-save).
+[ ] Supabase → care_tasks (that plant, type water): adjust_factor changed at most once
+    (stays 1 if it was due today; ~0.85x if it wasn't due yet). Tap again later the same
+    day → adjust_factor does not change again.
+
+6. ERROR + 404 SCREENS (was: bare crash page in the PWA)
+[ ] Visit <APP_URL>/plant/abc → "Nothing growing here" with a Back to my garden button.
+[ ] Visit <APP_URL>/no-such-page → same screen.
+[ ] Turn on airplane mode, tap "Watered" on a Today card → "Something wilted" screen with
+    Try again; bottom nav still visible. Turn airplane mode off, tap Try again → recovers.
+
+7. STALE TODAY SCREEN (was: frozen until force-quit)
+[ ] Open the Home Screen app, switch to another app for 2+ minutes, come back.
+[ ] Today refreshes on its own (mark something done on another device first to see it change).
+
+8. SECURITY SPOT CHECKS
+[ ] In a browser console on any site, run (fill your values):
+    fetch("<SUPABASE_URL>/rest/v1/settings?select=*", {headers:{apikey:"<ANON_KEY>"}}).then(r=>r.json()).then(console.log)
+    → returns [] (empty), NOT your settings row.
+[ ] <APP_URL>/_next/image?url=https://example.com/x.png&w=64&q=75 → 400 error, not an image.
+
+DEV CHECKS (done by Claude, Phase 7)
+- tsc, eslint, next build: clean. Vitest: 15/15.
+- Live: pages render; cron 401 without auth, window skip outside 07–09; "devil's ivy" → seeded Golden Pothos; 81-char name → 400; /plant/not-a-uuid → 404 screen.
+- NOT verifiable here: real push delivery, full-size camera upload, in-window cron send.

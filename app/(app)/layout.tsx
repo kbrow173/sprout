@@ -1,4 +1,5 @@
 import BottomNav from "@/components/BottomNav";
+import RefreshOnReturn from "@/components/RefreshOnReturn";
 
 /**
  * Shared frame for all in-app screens: a mobile-first centered column with
@@ -11,6 +12,7 @@ export default function AppLayout({
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
       <main className="flex-1 px-5 pt-6 pb-28">{children}</main>
       <BottomNav />
+      <RefreshOnReturn />
     </div>
   );
 }

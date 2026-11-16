@@ -442,3 +442,22 @@ Done:
   no herb is silently falling back to the shared icon.
 - ✅ Logged as L23 (color token matching its own backdrop) and L24 (shared
   fallback key silently collapsing distinct entities) in `LESSONS_LEARNED.md`.
+
+---
+## Phase 7 — Reliability + hardening (from full audit)  🟡 code complete, ⚠️ 1 migration
+Source: full read-only audit (2026-11-16), plan approved by user. Scope = the
+"things silently failing today" bucket. Auth gate (Phase 8), i18n decision
+(Phase 9), domain depth (Phase 10), UX/a11y (Phase 11) are separate.
+Done:
+- ✅ Large photos: client downscale before upload/ID (`lib/image.ts`); 2mb backstop (L25)
+- ✅ Push per-device; cron no longer gated by a global flag healed from one browser (L26)
+- ✅ Cron 3h catch-up window + claim release on total failure; workflow at :17, secrets via env (L27)
+- ✅ DST-safe calendar day math (old `addDays` off by one across DST, confirmed) (L28)
+- ✅ "Watered" double-tap: same-day no-op + pending button (L29)
+- ✅ Synonym 502 in manual add fixed — dedupe on resolved scientific name (L30)
+- ✅ Error boundary, root 404, refresh-on-return, plant-id UUID guard
+- ✅ RLS migration (L31), server-only Supabase client, image proxy locked, input caps/clamps, push TTL 12h
+- ✅ `lib/care-math.ts` extracted + Vitest (15 tests); CI workflow (lint/typecheck/test/build)
+- ✅ tsc / eslint / build clean; live dev checks passed (see checklist "DEV CHECKS")
+- ✅ Edge Case Destroyer: 0 critical, 2 medium, 4 low — all fixed (L32, L33). Tests 16/16, tsc/eslint/build clean, live cron re-checked
+- ⚠️ User: run `migration_007_rls.sql`; device checklist `tests/phase-7-checklist.txt`

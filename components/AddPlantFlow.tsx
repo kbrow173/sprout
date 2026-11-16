@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Camera, ImageUp, Library, Loader2, RotateCcw } from "lucide-react";
 import { createPlantAction, discardUploadedPhoto, uploadPlantPhoto } from "@/lib/actions";
 import PlantQuestions from "@/components/PlantQuestions";
+import { downscaleImage } from "@/lib/image";
 import type { IdentifyResult, SpeciesCare } from "@/lib/types";
 
 type Step =
@@ -45,13 +46,18 @@ export default function AddPlantFlow() {
     setPhotoUrl(null);
     setStep({ name: "identifying" });
 
+    // Shrink before upload — full-size phone photos blow past the Server
+    // Action / Vercel body limits (see lib/image.ts, L25).
+    const prepared = await downscaleImage(file);
+    if (requestId !== requestIdRef.current) return;
+
     // Kick off the Storage upload in parallel with identification — both
     // need to finish before the save button is meaningfully usable.
     setUploading(true);
     const uploadPromise = (async () => {
       try {
         const fd = new FormData();
-        fd.append("photo", file);
+        fd.append("photo", prepared);
         const { url, path } = await uploadPlantPhoto(fd);
         if (requestId !== requestIdRef.current) {
           // Superseded by a newer photo pick — don't leave this one orphaned.
@@ -69,9 +75,10 @@ export default function AddPlantFlow() {
 
     try {
       const fd = new FormData();
-      fd.append("photo", file);
+      fd.append("photo", prepared);
       const res = await fetch("/api/identify", { method: "POST", body: fd });
-      const data = await res.json();
+      // A platform-level rejection (e.g. 413) returns HTML, not our JSON.
+      const data = await res.json().catch(() => ({ error: "That photo couldn't be sent — try another one." }));
       if (requestId !== requestIdRef.current) return; // stale — a newer pick is now in flight
       if (!res.ok) throw new Error(data.error ?? "Identification failed.");
       setStep({ name: "confirm", result: data as IdentifyResult });

@@ -40,7 +40,7 @@ export default async function SettingsPage() {
           icon={<Bell className="size-5 text-forest-700" strokeWidth={2} />}
           title={t("pushTitle")}
           subtitle={t("pushSubtitle")}
-          trailing={<PushSubscribeButton initialEnabled={settings.push_enabled} />}
+          trailing={<PushSubscribeButton />}
         />
       </section>
 

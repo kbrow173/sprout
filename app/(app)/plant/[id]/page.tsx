@@ -17,12 +17,15 @@ import {
 import PlantIllustration from "@/components/PlantIllustration";
 import CareSection from "@/components/CareSection";
 import DeleteButton from "@/components/DeleteButton";
+import PendingSubmit from "@/components/PendingSubmit";
 import { getPlantWithCare } from "@/lib/plants";
 import { getWaterTaskForPlant, expectedWaterIntervalDays } from "@/lib/care";
 import { deletePlantAction, recordWaterCheckAction } from "@/lib/actions";
 
 // A plant's care sheet reflects live DB state (e.g. right after adding it).
 export const dynamic = "force-dynamic";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const LIGHT_LABEL: Record<string, string> = {
   low: "Low light",
@@ -42,12 +45,13 @@ export default async function PlantPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const plant = await getPlantWithCare(id);
+  // Not a UUID → 404 directly, rather than a Postgres cast error → crash page.
+  if (!UUID_PATTERN.test(id)) notFound();
+  const [plant, waterTask] = await Promise.all([getPlantWithCare(id), getWaterTaskForPlant(id)]);
   if (!plant) notFound();
 
   const care = plant.species_care;
   const displayName = plant.nickname || plant.common_name;
-  const waterTask = await getWaterTaskForPlant(id);
   // What Sprout currently expects for THIS pot — computed live from the current
   // season + learned factor, so it's right even between checks. Falls back to
   // the species' summer baseline for a plant with no water task yet.
@@ -115,12 +119,9 @@ export default async function PlantPage({
               <input type="hidden" name="task_id" value={waterTask.id} />
               <input type="hidden" name="status" value="watered" />
               <input type="hidden" name="redirect_to" value={`/plant/${plant.id}`} />
-              <button
-                type="submit"
-                className="flex w-full items-center justify-center gap-1.5 rounded-full bg-forest-700 px-3 py-2 text-sm font-bold text-white shadow-soft transition-transform active:scale-95"
-              >
+              <PendingSubmit className="flex w-full items-center justify-center gap-1.5 rounded-full bg-forest-700 px-3 py-2 text-sm font-bold text-white shadow-soft transition-transform active:scale-95">
                 <Droplets className="size-4" strokeWidth={2.6} /> I watered it just now
-              </button>
+              </PendingSubmit>
             </form>
           ) : null}
         </CareSection>

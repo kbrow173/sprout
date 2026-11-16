@@ -119,6 +119,7 @@ export interface Settings {
   morning_time: string; // "07:00"
   timezone: string; // IANA, e.g. "America/Chicago"
   email: string | null;
+  /** LEGACY — no longer read. Push is per-device (a push_subscriptions row = on). See L26. */
   push_enabled: boolean;
   email_enabled: boolean;
   /** Local date (in `timezone`) the morning digest last ran — dedupe guard. */

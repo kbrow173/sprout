@@ -1,6 +1,6 @@
 import { serverClient } from "@/lib/supabase";
 import { getSettings } from "@/lib/settings";
-import { getDueTasks, currentLocalDateAndHour } from "@/lib/care";
+import { getDueTasks, currentLocalDateAndHour, inMorningWindow, morningWindowDate } from "@/lib/care";
 import { sendPushToAll } from "@/lib/push";
 import { sendMorningEmail } from "@/lib/email";
 
@@ -9,14 +9,17 @@ export const runtime = "nodejs";
 /**
  * Triggered hourly by a GitHub Actions scheduled workflow (not Vercel Cron —
  * Hobby plan only allows once/day at a fixed UTC time, which drifts an hour
- * around DST). This route itself decides whether it's actually the user's
- * morning: it no-ops every hour except the one matching settings.morning_time
- * in settings.timezone, so the send time is always correct local time,
- * DST included, with no schedule to hand-adjust twice a year.
+ * around DST). This route decides whether it's actually the user's morning.
  *
- * morning_time is compared by hour only — the trigger is hourly, so minutes
- * can't be honored. updateSettingsAction rounds the stored value to :00 so
- * what's saved always matches what actually happens.
+ * CATCH-UP WINDOW (L27): GitHub's scheduled runs are routinely delayed and
+ * sometimes dropped. We send on the first run inside a short window starting
+ * at morning_time (wrapping past midnight); the once-per-day claim stops
+ * repeats. The claim is keyed by the date the window OPENED, so a 23:00
+ * window caught at 00:30 doesn't eat the next day's send.
+ *
+ * RETRY (L32): if anything fails after the claim — a DB error, or every
+ * attempted channel failing — the claim is released so the next run in the
+ * window tries again, instead of silently losing the day.
  */
 export async function POST(request: Request): Promise<Response> {
   const authHeader = request.headers.get("authorization");
@@ -26,60 +29,84 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const settings = await getSettings();
-  const { date: today, hour: currentHour } = currentLocalDateAndHour(settings.timezone);
+  const { date: localDate, hour: currentHour } = currentLocalDateAndHour(settings.timezone);
   const morningHour = Number(settings.morning_time.split(":")[0]);
 
-  if (currentHour !== morningHour) {
-    return Response.json({ skipped: "not morning time yet", currentHour, morningHour });
+  if (!inMorningWindow(currentHour, morningHour)) {
+    return Response.json({ skipped: "outside morning window", currentHour, morningHour });
   }
+  const sendDate = morningWindowDate(localDate, currentHour, morningHour);
 
-  // Atomic claim: only succeeds (returns a row) if last_morning_send_date is
-  // NOT already today. A second overlapping invocation (GitHub Actions retry
-  // or a manual workflow_dispatch landing in the same hour) will affect zero
-  // rows and skip, instead of both sending — this must happen BEFORE any
-  // sending, not after, or two concurrent requests both pass a read-only check.
+  // Atomic claim (L13): only succeeds if last_morning_send_date isn't already
+  // sendDate. Must happen BEFORE sending.
+  const previousSendDate = settings.last_morning_send_date ?? null;
   const { data: claimed, error: claimError } = await serverClient()
     .from("settings")
-    .update({ last_morning_send_date: today })
+    .update({ last_morning_send_date: sendDate })
     .eq("id", settings.id)
-    .or(`last_morning_send_date.is.null,last_morning_send_date.neq.${today}`)
+    .or(`last_morning_send_date.is.null,last_morning_send_date.neq.${sendDate}`)
     .select("id");
   if (claimError) throw new Error(`[sprout] /api/cron/morning: claim failed: ${claimError.message}`);
   if (!claimed || claimed.length === 0) {
-    return Response.json({ skipped: "already sent today", today });
+    return Response.json({ skipped: "already sent", sendDate });
   }
 
-  const tasks = await getDueTasks();
-  const results: { push?: unknown; email?: unknown } = {};
+  async function releaseClaim() {
+    const { error } = await serverClient()
+      .from("settings")
+      .update({ last_morning_send_date: previousSendDate })
+      .eq("id", settings.id);
+    if (error) console.error("[sprout] /api/cron/morning: release failed", error);
+  }
 
-  if (tasks.length > 0) {
-    if (settings.push_enabled) {
+  try {
+    const tasks = await getDueTasks();
+    const results: { push?: unknown; email?: unknown } = {};
+    let anySucceeded = false;
+    let anyFailed = false;
+
+    if (tasks.length > 0) {
+      // Count PLANTS, not tasks — one plant can have water + rotate due together.
+      const names = [...new Set(tasks.map((t) => t.plant.nickname || t.plant.common_name))];
+      const plantCount = new Set(tasks.map((t) => t.plant.id)).size;
+      const title = plantCount === 1 ? "🌱 1 plant needs you today" : `🌱 ${plantCount} plants need you today`;
+      const body = names.length > 3 ? `${names.slice(0, 3).join(", ")} +${names.length - 3} more` : names.join(", ");
+
+      // Push goes to every stored subscription — a device opts in/out by
+      // having a row (L26).
       try {
-        results.push = await sendPushToAll({
-          title: tasks.length === 1 ? "🌱 1 plant needs you today" : `🌱 ${tasks.length} plants need you today`,
-          body: tasks
-            .slice(0, 3)
-            .map((t) => t.plant.nickname || t.plant.common_name)
-            .join(", "),
-          url: "/",
-          tag: "sprout-daily",
-        });
+        const push = await sendPushToAll({ title, body, url: "/", tag: "sprout-daily" });
+        results.push = push;
+        if (push.sent > 0) anySucceeded = true;
+        // Every live device hit a transient error (5xx/timeout) → retry later.
+        else if (push.failed > 0) anyFailed = true;
       } catch (err) {
         console.error("[sprout] /api/cron/morning: push failed", err);
         results.push = { error: String(err) };
+        anyFailed = true;
+      }
+
+      if (settings.email_enabled && settings.email) {
+        try {
+          const sent = await sendMorningEmail(settings.email, tasks);
+          results.email = sent ? { sent: true } : { sent: false, reason: "Resend not configured" };
+          if (sent) anySucceeded = true;
+        } catch (err) {
+          console.error("[sprout] /api/cron/morning: email failed", err);
+          results.email = { sent: false, error: String(err) };
+          anyFailed = true;
+        }
       }
     }
 
-    if (settings.email_enabled && settings.email) {
-      try {
-        const sent = await sendMorningEmail(settings.email, tasks);
-        results.email = sent ? { sent: true } : { sent: false, reason: "Resend not configured" };
-      } catch (err) {
-        console.error("[sprout] /api/cron/morning: email failed", err);
-        results.email = { sent: false, error: String(err) };
-      }
+    if (anyFailed && !anySucceeded) {
+      await releaseClaim();
+      return Response.json({ ran: true, released: true, sendDate, dueCount: tasks.length, ...results }, { status: 502 });
     }
+    return Response.json({ ran: true, sendDate, dueCount: tasks.length, ...results });
+  } catch (err) {
+    console.error("[sprout] /api/cron/morning: failed after claim", err);
+    await releaseClaim();
+    return Response.json({ error: "Morning run failed; will retry next run.", released: true }, { status: 500 });
   }
-
-  return Response.json({ ran: true, today, dueCount: tasks.length, ...results });
 }

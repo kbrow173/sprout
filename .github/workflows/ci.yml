@@ -1,0 +1,30 @@
+name: CI
+
+# Lint, typecheck, unit tests, and a production build on every push/PR, so a
+# broken main is caught before Vercel deploys it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      # Placeholder env: pages are force-dynamic, so the build never queries
+      # Supabase — it only needs the vars to be present for config parsing.
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+          SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ci-placeholder

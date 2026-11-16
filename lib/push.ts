@@ -3,6 +3,8 @@ import webpush from "web-push";
 import { serverClient } from "@/lib/supabase";
 import type { PushSubscriptionRow } from "@/lib/types";
 
+const PUSH_TTL_SECONDS = 12 * 60 * 60;
+
 let configured = false;
 function ensureConfigured(): void {
   if (configured) return;
@@ -45,23 +47,33 @@ export interface PushPayload {
 }
 
 /** Sends a push to every stored subscription; prunes ones the push service reports gone (404/410). */
-export async function sendPushToAll(payload: PushPayload): Promise<{ sent: number; pruned: number }> {
-  ensureConfigured();
-
+export async function sendPushToAll(
+  payload: PushPayload
+): Promise<{ sent: number; pruned: number; failed: number }> {
+  // Subscriptions first: with none, push is simply not in use — don't require
+  // VAPID env (email-only setups would otherwise throw every morning).
   const { data: subs, error } = await serverClient().from("push_subscriptions").select("*");
   if (error) throw new Error(`[sprout] sendPushToAll: ${error.message}`);
-  if (!subs || subs.length === 0) return { sent: 0, pruned: 0 };
+  if (!subs || subs.length === 0) return { sent: 0, pruned: 0, failed: 0 };
+
+  ensureConfigured();
 
   const body = JSON.stringify(payload);
   let sent = 0;
   let pruned = 0;
+  // Transient failures (5xx, timeouts) — reported so the cron can retry.
+  let failed = 0;
 
   await Promise.all(
     (subs as PushSubscriptionRow[]).map(async (sub) => {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          body
+          body,
+          // If the phone is offline, the push service holds the message at
+          // most this long — a "morning" nudge arriving at night is worse
+          // than none. web-push's default TTL is 4 weeks.
+          { TTL: PUSH_TTL_SECONDS }
         );
         sent++;
       } catch (err) {
@@ -83,11 +95,12 @@ export async function sendPushToAll(payload: PushPayload): Promise<{ sent: numbe
           await removeSubscription(sub.endpoint);
           pruned++;
         } else {
+          failed++;
           console.error(`[sprout] sendPushToAll: failed for ${sub.endpoint}`, err);
         }
       }
     })
   );
 
-  return { sent, pruned };
+  return { sent, pruned, failed };
 }

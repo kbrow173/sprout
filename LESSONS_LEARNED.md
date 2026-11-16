@@ -405,3 +405,113 @@ And: any fix to a value that's denormalized at write-time (for a documented
 reason) needs a backfill on BOTH the source-of-truth table and every place
 that copied it — updating only the source leaves already-created records
 stuck on the old value forever.
+
+## L25 — Server Actions cap bodies at 1MB; phone photos are 2–6MB
+**Context:** Audit (Phase 7). `uploadPlantPhoto` is a Server Action, and Next's
+default `serverActions.bodySizeLimit` is 1MB. Raw phone photos are bigger, so
+the Storage upload failed for most real photos — and `AddPlantFlow` swallowed
+the error as "non-fatal", so nobody noticed. `/api/identify` also sits under
+Vercel's ~4.5MB function body cap.
+**Decision:** Downscale client-side before either request (`lib/image.ts`:
+long edge 1568px, JPEG 0.85, EXIF-rotated). Claude vision downsamples past that
+anyway, so ID gets faster and cheaper too. `bodySizeLimit: "2mb"` as backstop.
+**Prevention:** Any upload through a Server Action or serverless function needs
+an explicit size budget. Never swallow an upload failure silently.
+
+## L26 — A global flag must not be "healed" from one device's state
+**Context:** `PushSubscribeButton` synced the global `settings.push_enabled` to
+*this browser's* subscription on mount. Opening Settings on a laptop (no
+subscription) wrote `false`, and the cron stopped pushing to the phone.
+**Decision:** Push is per-device. The cron sends to every `push_subscriptions`
+row; a device is "on" iff it has a row. `push_enabled` is legacy, unread, and
+`setPushEnabledAction` is gone.
+**Prevention:** Before writing local state into a shared row, ask: is this
+value really global, or per-device/per-session? If per-device, store it per device.
+
+## L27 — Scheduled CI runs are late or skipped; match a window, not an exact hour
+**Context:** The cron route only sent when `currentHour === morningHour`.
+GitHub's scheduled runs are routinely delayed (worst at `:00`) and sometimes
+dropped, so a late run fell into the next hour and that day had no reminder.
+**Decision:** `inMorningWindow`: send on the first run inside a 3-hour window
+that opens at morning_time; the existing once-per-day claim (L13) stops
+repeats. Workflow moved to minute 17. If every channel throws, the claim is
+released so the next run retries.
+**Prevention:** Treat any external scheduler as "at least once, roughly on
+time". Use a window plus an idempotency claim, never an exact-time match.
+Also: GitHub disables scheduled workflows after 60 days of repo inactivity.
+
+## L28 — Adding days as 24h chunks is off by one across DST
+**Context:** `addDays` added days to the server's (UTC) clock, then took the
+local date. When the span crossed a DST change, the result was off by one:
+23:30 the night before spring-forward + 1 day gave two days later; 00:30 on
+fall-back day + 1 day gave the same day. Confirmed by running the old algorithm.
+**Decision:** Do calendar math on the local `YYYY-MM-DD` string
+(`addDaysToDateOnly`). Covered by tests in `lib/care-math.test.ts`.
+**Prevention:** "N days later" is calendar math, not `+ N * 86400000`. Convert
+to the local date first, then add days.
+
+## L29 — A non-idempotent action behind a plain submit button gets double-fired
+**Context:** "I watered it just now" was a plain `<button>` in a server
+component. A double-tap ran `recordWaterCheck` twice; the second run saw
+today < new due date, treated it as "watered early", and shrank the factor
+again. Repeated taps could drive it to the 0.5 floor.
+**Decision:** `planWaterCheck` returns null (no-op) for a second "watered" on
+the same local day, and the button uses `PendingSubmit` (disabled while pending).
+**Prevention:** Fix both layers: disable the button while pending, AND make the
+server action safe to repeat. The UI guard alone doesn't stop a direct POST
+or a slow network retry.
+
+## L30 — Dedupe on the RESOLVED key, not the request key
+**Context:** Manual add with a synonym ("devil's ivy") sent only a common name.
+Claude resolved it to *Epipremnum aureum*, already seeded, so the insert hit the
+unique constraint, and the race-recovery lookup used the request's (empty)
+scientific name → 502.
+**Decision:** After generation, look up by `generated.scientific_name` before
+inserting, and in the 23505 branch. Verified live: returns the seeded Golden Pothos.
+**Prevention:** When a lookup key is produced by a transform (a model, a
+normalizer), every cache check after that point uses the transformed key.
+
+## L31 — "Public anon key, permissive RLS" means the database is public
+**Context:** RLS was never enabled. The anon key ships to the browser by
+design, so anyone with it could read and write every table through PostgREST,
+including the reminder email and push endpoints. The app never used the anon
+client (`browserClient` was dead code).
+**Decision:** `migration_007_rls.sql` enables RLS on every table with no
+policies. The service-role key (server-only) bypasses RLS, so the app is
+unaffected. `browserClient` removed; `lib/supabase.ts` is now `server-only`.
+**Prevention:** With Supabase, RLS on + no policies is the safe default for any
+table only the server touches. "Private URL" is not access control.
+
+## L12 — recurred (Phase 7)
+Same symptom during Phase 7 verification: after many edits, Today/Settings
+rendered empty with a misleading `useTranslations ... NextIntlClientProvider
+not found` error. Deleting `.next` and restarting fixed it with no code change.
+Note the error text points at the wrong cause. Delete `.next` first.
+
+## L32 — Edge Case Destroyer, Phase 7: a claim must be released on EVERY failure path
+**Found (fixed):**
+1. `sendPushToAll` swallowed transient per-device errors (5xx/timeouts) and
+   returned `{sent:0}` without throwing, so the cron kept the day's claim and
+   never retried. It now returns `failed`; all-transient-failure counts as failure.
+2. Anything throwing after the claim (e.g. `getDueTasks` on a Supabase blip)
+   returned 500 with the day already claimed. Everything after the claim is
+   now in try/catch and releases it.
+3. Regression from removing `push_enabled`: `ensureConfigured()` threw before
+   the "no subscriptions" check, so email-only setups failed every morning.
+   Subscriptions are queried first now.
+4. The catch-up window didn't wrap midnight (a 23:00 setting had a 1h window).
+   Window now wraps, and the claim is keyed by the date the window opened
+   (`morningWindowDate`) so a 00:30 catch-up doesn't block the next day.
+5. Canvas → JPEG turned transparent PNG areas black; fill white first.
+**Prevention:** After adding an idempotency claim, list every exit path after
+it (each return and each throw) and decide for each one: keep or release.
+"Didn't throw" is not the same as "succeeded" — check result counts too.
+
+## L33 — A case-sensitive UNIQUE plus a case-insensitive lookup is a time bomb
+Found by the Edge Case Destroyer: `species_care.scientific_name` was unique
+case-sensitively, while `getSpeciesByScientificName` uses `ilike` +
+`maybeSingle()`. Two concurrent inserts differing only in case both succeed,
+and every later lookup errors with "multiple rows". Fixed with a unique index
+on `lower(scientific_name)` (migration_007).
+**Prevention:** The uniqueness rule in the DB must match how the app looks the
+value up.
