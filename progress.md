@@ -444,7 +444,7 @@ Done:
   fallback key silently collapsing distinct entities) in `LESSONS_LEARNED.md`.
 
 ---
-## Phase 7 — Reliability + hardening (from full audit)  🟡 code complete, ⚠️ 1 migration
+## Phase 7 — Reliability + hardening (from full audit)  🟡 code complete, awaiting device test
 Source: full read-only audit (2026-11-16), plan approved by user. Scope = the
 "things silently failing today" bucket. Auth gate (Phase 8), i18n decision
 (Phase 9), domain depth (Phase 10), UX/a11y (Phase 11) are separate.
@@ -460,4 +460,5 @@ Done:
 - ✅ `lib/care-math.ts` extracted + Vitest (15 tests); CI workflow (lint/typecheck/test/build)
 - ✅ tsc / eslint / build clean; live dev checks passed (see checklist "DEV CHECKS")
 - ✅ Edge Case Destroyer: 0 critical, 2 medium, 4 low — all fixed (L32, L33). Tests 16/16, tsc/eslint/build clean, live cron re-checked
-- ⚠️ User: run `migration_007_rls.sql`; device checklist `tests/phase-7-checklist.txt`
+- ✅ `migration_007_rls.sql` run live; verified anon key gets 0 rows, app unaffected
+- ⏳ User: device checklist `tests/phase-7-checklist.txt`
