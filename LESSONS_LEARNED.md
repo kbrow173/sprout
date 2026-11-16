@@ -515,3 +515,20 @@ and every later lookup errors with "multiple rows". Fixed with a unique index
 on `lower(scientific_name)` (migration_007).
 **Prevention:** The uniqueness rule in the DB must match how the app looks the
 value up.
+
+## L34 — First CI run: lockfile drift across npm versions + a Turbopack font flake
+**Context:** The new CI workflow failed twice right after Phase 7 was pushed.
+1. `npm ci` (Node 22 / npm 10) rejected `package-lock.json` — missing
+   `@swc/helpers@0.5.24`. The lockfile was written by npm 11 locally, which
+   tolerated the gap. Regenerated with npm 10 (additions only); verified
+   `npm ci` passes on npm 10 AND npm 11.
+2. `next build` then failed on the runner with Turbopack's
+   `Can't resolve '@vercel/turbopack-next/internal/font/google/font'`
+   (`next/font/google queries have exactly one entry`). It's a known
+   intermittent issue (vercel/next.js discussion #81721); the same commit built
+   locally (with placeholder env, clean worktree) and on Vercel. CI retries the
+   build once.
+**Prevention:** When adding CI, run `npx npm@<CI version> ci --dry-run`
+locally first — a lockfile that works for your npm may not work for CI's.
+If the font flake keeps happening, self-host the two fonts with
+`next/font/local` to take the network out of the build.

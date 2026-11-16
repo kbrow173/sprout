@@ -11,8 +11,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -22,7 +22,11 @@ jobs:
       - run: npm test
       # Placeholder env: pages are force-dynamic, so the build never queries
       # Supabase — it only needs the vars to be present for config parsing.
-      - run: npm run build
+      # One retry: Turbopack's next/font/google resolution intermittently fails
+      # on runners ("Can't resolve '@vercel/turbopack-next/internal/font/google/font'",
+      # vercel/next.js#81721) while the same commit builds fine locally and on
+      # Vercel. A real build error fails both attempts. See L34.
+      - run: npm run build || { echo "::warning::build failed, retrying once (next/font flake)"; rm -rf .next; npm run build; }
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
