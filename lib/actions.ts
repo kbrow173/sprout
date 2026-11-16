@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { serverClient } from "@/lib/supabase";
+import { requireSession } from "@/lib/auth-server";
 import { getSpeciesById } from "@/lib/species";
 import { generateCareTasksForPlant, markCareTaskDone, recordWaterCheck } from "@/lib/care";
 import { LOCALE_COOKIE, LOCALES, DEFAULT_LOCALE } from "@/i18n/request";
@@ -16,6 +17,7 @@ import type { Locale, WaterCheckStatus } from "@/lib/types";
  * plant row so a plant keeps its identity even if the species record changes.
  */
 export async function createPlantAction(formData: FormData): Promise<void> {
+  await requireSession();
   const careSpeciesId = String(formData.get("care_species_id") ?? "");
   if (!careSpeciesId) {
     throw new Error("Please choose a plant from the list before saving.");
@@ -100,6 +102,7 @@ export interface UploadedPhoto {
 
 /** Uploads a captured/chosen plant photo to Storage, returns its public URL + path. */
 export async function uploadPlantPhoto(formData: FormData): Promise<UploadedPhoto> {
+  await requireSession();
   const photo = formData.get("photo");
   if (!(photo instanceof File)) throw new Error("No photo provided.");
   const ext = PHOTO_TYPES[photo.type];
@@ -119,6 +122,7 @@ export async function uploadPlantPhoto(formData: FormData): Promise<UploadedPhot
 
 /** Best-effort cleanup for a photo uploaded but never attached to a saved plant. */
 export async function discardUploadedPhoto(path: string): Promise<void> {
+  await requireSession();
   // Only the flat "<uuid>.<ext>" names uploadPlantPhoto creates — this action
   // is callable directly, so don't let it delete arbitrary bucket paths.
   // (".jpeg" too: uploads before Phase 7 used the raw MIME subtype.)
@@ -127,6 +131,7 @@ export async function discardUploadedPhoto(path: string): Promise<void> {
 }
 
 export async function deletePlantAction(formData: FormData): Promise<void> {
+  await requireSession();
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("Missing plant id.");
 
@@ -156,6 +161,7 @@ function storagePathFromPublicUrl(url: string | null | undefined): string | null
 }
 
 export async function markCareTaskDoneAction(formData: FormData): Promise<void> {
+  await requireSession();
   const taskId = String(formData.get("task_id") ?? "");
   if (!taskId) throw new Error("Missing task id.");
 
@@ -171,6 +177,7 @@ export async function markCareTaskDoneAction(formData: FormData): Promise<void> 
  * junk `last_status`. `redirect_to` lets the plant page bounce back to itself.
  */
 export async function recordWaterCheckAction(formData: FormData): Promise<void> {
+  await requireSession();
   const taskId = String(formData.get("task_id") ?? "");
   if (!taskId) throw new Error("Missing task id.");
 
@@ -204,6 +211,7 @@ function isValidTimezone(tz: string): boolean {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function updateSettingsAction(formData: FormData): Promise<void> {
+  await requireSession();
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("Missing settings id.");
 

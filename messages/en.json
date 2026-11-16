@@ -130,5 +130,13 @@
     "timezone": "Timezone",
     "language": "Language",
     "save": "Save"
+  },
+  "login": {
+    "title": "Welcome back",
+    "body": "Enter your Sprout passcode to open your garden on this device.",
+    "label": "Passcode",
+    "placeholder": "Passcode",
+    "wrong": "That's not it — try again.",
+    "submit": "Unlock"
   }
 }

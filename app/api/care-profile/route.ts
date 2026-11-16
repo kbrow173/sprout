@@ -1,3 +1,4 @@
+import { requestHasSession, unauthorizedResponse } from "@/lib/auth";
 import { serverClient } from "@/lib/supabase";
 import { getSpeciesByScientificName } from "@/lib/species";
 import { generateCareProfile } from "@/lib/anthropic";
@@ -16,6 +17,7 @@ const MAX_SCIENTIFIC = 120;
  * it back to species_care so the next lookup is a cache hit.
  */
 export async function POST(request: Request): Promise<Response> {
+  if (!(await requestHasSession(request))) return unauthorizedResponse();
   const body = await request.json().catch(() => null);
   const commonName = typeof body?.common_name === "string" ? body.common_name.trim() : "";
   const scientificName = typeof body?.scientific_name === "string" ? body.scientific_name.trim() : "";

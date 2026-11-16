@@ -130,5 +130,13 @@
     "timezone": "Zeitzone",
     "language": "Sprache",
     "save": "Speichern"
+  },
+  "login": {
+    "title": "Willkommen zurück",
+    "body": "Gib deinen Sprout-Code ein, um deinen Garten auf diesem Gerät zu öffnen.",
+    "label": "Code",
+    "placeholder": "Code",
+    "wrong": "Das stimmt nicht – versuch es noch einmal.",
+    "submit": "Entsperren"
   }
 }

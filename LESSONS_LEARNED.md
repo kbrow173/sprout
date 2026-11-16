@@ -532,3 +532,11 @@ value up.
 locally first — a lockfile that works for your npm may not work for CI's.
 If the font flake keeps happening, self-host the two fonts with
 `next/font/local` to take the network out of the build.
+
+## L35 — Passcode gate: proxy.ts AND a check inside every Server Action
+Phase 8. `proxy.ts` (Next 16's renamed middleware) redirects pages to /login
+and 401s API/action POSTs without a valid `sprout_session` cookie
+(HMAC of APP_PASSCODE — rotating the passcode logs every device out).
+Next's docs warn a matcher change can silently drop proxy coverage of Server
+Functions, so every action also calls `requireSession()` and the open API
+routes check `requestHasSession()`. Gate is OFF while APP_PASSCODE is unset.

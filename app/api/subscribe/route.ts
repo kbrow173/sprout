@@ -1,3 +1,4 @@
+import { requestHasSession, unauthorizedResponse } from "@/lib/auth";
 import { saveSubscription, removeSubscription, type PushSubscriptionJSON } from "@/lib/push";
 
 export const runtime = "nodejs";
@@ -20,6 +21,7 @@ function isValidSubscription(body: unknown): body is PushSubscriptionJSON {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (!(await requestHasSession(request))) return unauthorizedResponse();
   const body = await request.json().catch(() => null);
   if (!isValidSubscription(body)) {
     return Response.json({ error: "Invalid push subscription." }, { status: 400 });
@@ -35,6 +37,7 @@ export async function POST(request: Request): Promise<Response> {
 }
 
 export async function DELETE(request: Request): Promise<Response> {
+  if (!(await requestHasSession(request))) return unauthorizedResponse();
   const body = await request.json().catch(() => null);
   const endpoint = (body as { endpoint?: string } | null)?.endpoint;
   if (!endpoint) {

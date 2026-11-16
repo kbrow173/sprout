@@ -32,19 +32,22 @@
   /* Ink & muted — green-tinted neutrals, never pure black */
   --color-ink: #16241b;
   --color-muted: #5b6b60;
-  --color-faint: #8a998f;
+  --color-faint: #6b7a70; /* was #8a998f (2.99:1) — now 4.52:1 on white, WCAG AA */
   --color-line: #e4ece5;
 
   /* Bloom — a warm coral used *sparingly* for delight (streaks, hearts, love) */
   --color-bloom-500: #f2765e;
+  --color-bloom-600: #c2452d; /* TEXT on white (5.0:1). -500 is for icons/fills only */
   --color-bloom-100: #fdeae4;
 
   /* Sun — a soft honey for "harvest"/rewards accents */
   --color-sun-500: #f5b545;
+  --color-sun-700: #8a5a00; /* TEXT on white (5.9:1) */
   --color-sun-100: #fdf1d9;
 
   /* Sky — a calm blue reserved for "water" tasks */
   --color-sky-500: #4aa6d6;
+  --color-sky-700: #2477a3; /* TEXT on white (5.0:1) */
   --color-sky-100: #e3f2fa;
 
   --radius-blob: 1.75rem;
@@ -76,10 +79,13 @@
   --color-line: var(--color-line);
 
   --color-bloom-500: var(--color-bloom-500);
+  --color-bloom-600: var(--color-bloom-600);
   --color-bloom-100: var(--color-bloom-100);
   --color-sun-500: var(--color-sun-500);
+  --color-sun-700: var(--color-sun-700);
   --color-sun-100: var(--color-sun-100);
   --color-sky-500: var(--color-sky-500);
+  --color-sky-700: var(--color-sky-700);
   --color-sky-100: var(--color-sky-100);
 
   --radius-blob: var(--radius-blob);

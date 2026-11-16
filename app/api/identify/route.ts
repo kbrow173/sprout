@@ -1,3 +1,4 @@
+import { requestHasSession, unauthorizedResponse } from "@/lib/auth";
 import { identifyPlant } from "@/lib/anthropic";
 import type { IdentifyResult } from "@/lib/types";
 
@@ -42,6 +43,7 @@ function sniffImageType(bytes: Uint8Array): SupportedMediaType | null {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (!(await requestHasSession(request))) return unauthorizedResponse();
   const formData = await request.formData();
   const photo = formData.get("photo");
 
