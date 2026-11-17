@@ -530,8 +530,8 @@ value up.
    build once.
 **Prevention:** When adding CI, run `npx npm@<CI version> ci --dry-run`
 locally first — a lockfile that works for your npm may not work for CI's.
-If the font flake keeps happening, self-host the two fonts with
-`next/font/local` to take the network out of the build.
+UPDATE: it also failed Vercel production builds (19s), so the fonts are now
+self-hosted from @fontsource-variable via `next/font/local` — no network in the build.
 
 ## L35 — Passcode gate: proxy.ts AND a check inside every Server Action
 Phase 8. `proxy.ts` (Next 16's renamed middleware) redirects pages to /login

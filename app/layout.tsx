@@ -1,21 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Nunito } from "next/font/google";
+import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 // Distinctive, friendly type — deliberately NOT Inter/Roboto/system defaults.
-const display = Bricolage_Grotesque({
+// Self-hosted from @fontsource-variable (npm), NOT next/font/google: Google
+// font fetching made Turbopack builds fail intermittently on CI and Vercel
+// ("Can't resolve '@vercel/turbopack-next/internal/font/google/font'") — L34.
+// Variable fonts: one file covers every weight we use.
+const display = localFont({
+  src: "../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2",
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "200 800",
+  display: "swap",
 });
 
-const body = Nunito({
+const body = localFont({
+  src: "../node_modules/@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2",
   variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "200 1000",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
