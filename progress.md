@@ -462,3 +462,24 @@ Done:
 - ✅ Edge Case Destroyer: 0 critical, 2 medium, 4 low — all fixed (L32, L33). Tests 16/16, tsc/eslint/build clean, live cron re-checked
 - ✅ `migration_007_rls.sql` run live; verified anon key gets 0 rows, app unaffected
 - ⏳ User: device checklist `tests/phase-7-checklist.txt`
+
+---
+## Phase 8 — Passcode gate  ✅ shipped (dcfc8bd)
+`proxy.ts` + per-action `requireSession()`; HMAC session cookie; login page;
+lock button. OFF until `APP_PASSCODE` is set in Vercel. L35.
+
+## Phases 9–11 — Translations, plant-care depth, UX + accessibility  🟡 code complete, ⚠️ migration_008 before deploy
+User: "Build the app. All of it." Default chosen: liquid fertilizer, half strength.
+- ✅ Phase 10: fertilizing, pot-based watering priors, spring root checks,
+  hemisphere, care history + undo, snooze/skip (L36)
+- ✅ Phase 11: per-plant task cards, Undo toast, garden status chips, plant
+  edit + notes, Settings Saved feedback + hour select + all timezones + detect,
+  onboarding, app-icon badge, push deep link, branded email with links,
+  pinch-zoom, AA contrast, aria-pressed, focus rings, 16px inputs
+- ✅ Phase 9: every screen + push + email in en/es/de/ko; care text localized (L38)
+- ✅ Vision max_tokens fix (L37); slim species picker query
+- ✅ tsc / eslint / 35 tests / build clean; i18n check 244 keys × 4 OK
+- ⚠️ Edge Case Destroyer agent stopped by the account spend limit before
+  reporting — re-run after the limit resets
+- ⚠️ User: run `supabase/migration_008_care_depth.sql`, then deploy;
+  checklist `tests/phase-8-11-checklist.txt`

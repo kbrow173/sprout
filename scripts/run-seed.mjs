@@ -362,6 +362,46 @@ const species = [
     ["Don't let it dry out — fronds crisp up quickly and permanently", "Don't place near a heating vent or drafty window"]),
 ];
 
+// Days between liquid feeds in the growing season (Phase 10, migration_008).
+const FERTILIZE_DAYS = {
+  "Epipremnum aureum": 21,
+  "Philodendron hederaceum": 21,
+  "Epipremnum aureum 'Marble Queen'": 21,
+  "Hedera helix": 21,
+  "Monstera adansonii": 21,
+  "Monstera deliciosa": 21,
+  "Dracaena trifasciata": 42,
+  "Zamioculcas zamiifolia": 42,
+  "Chlorophytum comosum": 21,
+  "Spathiphyllum wallisii": 42,
+  "Calathea orbifolia": 28,
+  "Maranta leuconeura": 28,
+  "Anthurium andraeanum": 28,
+  "Ficus lyrata": 21,
+  "Ficus elastica": 28,
+  "Aloe vera": 60,
+  "Crassula ovata": 42,
+  "Echeveria elegans": 42,
+  "Curio rowleyanus": 42,
+  "Ceropegia woodii": 28,
+  "Pilea peperomioides": 28,
+  "Dracaena marginata": 28,
+  "Dypsis lutescens": 28,
+  "Chamaedorea elegans": 28,
+  "Ocimum basilicum": 14,
+  "Mentha spicata": 21,
+  "Salvia rosmarinus": 42,
+  "Thymus vulgaris": 42,
+  "Origanum vulgare": 42,
+  "Petroselinum crispum": 21,
+  "Coriandrum sativum": 21,
+  "Allium schoenoprasum": 28,
+  "Salvia officinalis": 42,
+  "Melissa officinalis": 28,
+  "Phalaenopsis amabilis": 14,
+  "Nephrolepis exaltata": 28
+};
+
 function s(common_name, scientific_name, illustration_key, difficulty, light,
   water_days_summer, water_days_winter, humidity, soil_recommendation,
   rotate_days, repot_months, toxicity, propagation, pruning, harvesting,
@@ -370,7 +410,7 @@ function s(common_name, scientific_name, illustration_key, difficulty, light,
     common_name, scientific_name, illustration_key, difficulty, light,
     water_days_summer, water_days_winter, humidity, soil_recommendation,
     rotate_days, repot_months, toxicity, propagation, pruning, harvesting,
-    harvest_days, dos, donts, source: "seed",
+    harvest_days, fertilize_days: FERTILIZE_DAYS[scientific_name] ?? null, dos, donts, source: "seed",
   };
 }
 

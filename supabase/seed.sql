@@ -376,3 +376,26 @@ values
  'seed')
 
 on conflict (scientific_name) do nothing;
+
+-- fertilize_days per species (Phase 10). Same values as migration_008.
+update species_care s set fertilize_days = v.days
+from (values
+  ('Epipremnum aureum', 21), ('Philodendron hederaceum', 21),
+  ('Epipremnum aureum ''Marble Queen''', 21), ('Hedera helix', 21),
+  ('Monstera adansonii', 21), ('Monstera deliciosa', 21),
+  ('Dracaena trifasciata', 42), ('Zamioculcas zamiifolia', 42),
+  ('Chlorophytum comosum', 21), ('Spathiphyllum wallisii', 42),
+  ('Calathea orbifolia', 28), ('Maranta leuconeura', 28),
+  ('Anthurium andraeanum', 28), ('Ficus lyrata', 21), ('Ficus elastica', 28),
+  ('Aloe vera', 60), ('Crassula ovata', 42), ('Echeveria elegans', 42),
+  ('Curio rowleyanus', 42), ('Ceropegia woodii', 28),
+  ('Pilea peperomioides', 28), ('Dracaena marginata', 28),
+  ('Dypsis lutescens', 28), ('Chamaedorea elegans', 28),
+  ('Ocimum basilicum', 14), ('Mentha spicata', 21), ('Salvia rosmarinus', 42),
+  ('Thymus vulgaris', 42), ('Origanum vulgare', 42),
+  ('Petroselinum crispum', 21), ('Coriandrum sativum', 21),
+  ('Allium schoenoprasum', 28), ('Salvia officinalis', 42),
+  ('Melissa officinalis', 28), ('Phalaenopsis amabilis', 14),
+  ('Nephrolepis exaltata', 28)
+) as v(name, days)
+where s.scientific_name = v.name and s.fertilize_days is null;

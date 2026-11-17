@@ -3,6 +3,7 @@ import { getSettings } from "@/lib/settings";
 import { getDueTasks, currentLocalDateAndHour, inMorningWindow, morningWindowDate } from "@/lib/care";
 import { sendPushToAll } from "@/lib/push";
 import { sendMorningEmail } from "@/lib/email";
+import { serverTranslator } from "@/lib/server-i18n";
 
 export const runtime = "nodejs";
 
@@ -69,13 +70,16 @@ export async function POST(request: Request): Promise<Response> {
       // Count PLANTS, not tasks — one plant can have water + rotate due together.
       const names = [...new Set(tasks.map((t) => t.plant.nickname || t.plant.common_name))];
       const plantCount = new Set(tasks.map((t) => t.plant.id)).size;
-      const title = plantCount === 1 ? "🌱 1 plant needs you today" : `🌱 ${plantCount} plants need you today`;
-      const body = names.length > 3 ? `${names.slice(0, 3).join(", ")} +${names.length - 3} more` : names.join(", ");
+      const t = await serverTranslator(settings.language, "push");
+      const title = t("morningTitle", { count: plantCount });
+      const body = names.length > 3 ? t("morningBodyMore", { names: names.slice(0, 3).join(", "), more: names.length - 3 }) : names.join(", ");
+      // One plant → open its care sheet directly; several → Today.
+      const url = plantCount === 1 ? `/plant/${tasks[0].plant.id}` : "/";
 
       // Push goes to every stored subscription — a device opts in/out by
       // having a row (L26).
       try {
-        const push = await sendPushToAll({ title, body, url: "/", tag: "sprout-daily" });
+        const push = await sendPushToAll({ title, body, url, tag: "sprout-daily", badge: plantCount });
         results.push = push;
         if (push.sent > 0) anySucceeded = true;
         // Every live device hit a transient error (5xx/timeout) → retry later.
@@ -88,7 +92,7 @@ export async function POST(request: Request): Promise<Response> {
 
       if (settings.email_enabled && settings.email) {
         try {
-          const sent = await sendMorningEmail(settings.email, tasks);
+          const sent = await sendMorningEmail(settings.email, tasks, settings.language);
           results.email = sent ? { sent: true } : { sent: false, reason: "Resend not configured" };
           if (sent) anySucceeded = true;
         } catch (err) {

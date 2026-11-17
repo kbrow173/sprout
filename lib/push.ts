@@ -44,6 +44,8 @@ export interface PushPayload {
   body: string;
   url?: string;
   tag?: string;
+  /** App-icon badge count (installed PWA; the SW sets it). */
+  badge?: number;
 }
 
 /** Sends a push to every stored subscription; prunes ones the push service reports gone (404/410). */

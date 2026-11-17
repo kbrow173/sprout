@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -38,6 +39,7 @@ function isIosBrowserTab(): boolean {
  * the whole subscribe flow lives behind one button press.
  */
 export default function PushSubscribeButton() {
+  const t = useTranslations("push");
   const supported = useSyncExternalStore(noopSubscribe, pushSupported, () => true);
   const iosTab = useSyncExternalStore(noopSubscribe, isIosBrowserTab, () => false);
   const [enabled, setEnabled] = useState(false);
@@ -76,15 +78,13 @@ export default function PushSubscribeButton() {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         setMessage(
-          permission === "denied"
-            ? "Notifications are blocked — allow them in your browser or phone settings."
-            : "Notifications weren't allowed."
+          permission === "denied" ? t("blocked") : t("notAllowed")
         );
         return;
       }
 
       const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!publicKey) throw new Error("Push isn't configured yet.");
+      if (!publicKey) throw new Error(t("notConfigured"));
 
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -98,12 +98,12 @@ export default function PushSubscribeButton() {
       if (!res.ok) {
         // Don't leave a browser subscription the server doesn't know about.
         await sub.unsubscribe();
-        throw new Error("Couldn't save this device.");
+        throw new Error(t("saveFailed"));
       }
       setEnabled(true);
     } catch (err) {
       console.error("[sprout] push toggle failed:", err);
-      setMessage(err instanceof Error ? err.message : "Something went wrong — try again.");
+      setMessage(err instanceof Error && err.message ? err.message : t("genericError"));
     } finally {
       setBusy(false);
     }
@@ -112,7 +112,7 @@ export default function PushSubscribeButton() {
   if (!supported) {
     return (
       <span className="max-w-[9rem] text-right text-xs font-semibold text-muted">
-        {iosTab ? "Add Sprout to your Home Screen first" : "Not supported here"}
+        {iosTab ? t("installFirst") : t("notSupported")}
       </span>
     );
   }
@@ -124,7 +124,7 @@ export default function PushSubscribeButton() {
         onClick={toggle}
         disabled={busy}
         aria-pressed={enabled}
-        aria-label="Notifications on this device"
+        aria-label={t("toggleLabel")}
         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-forest-500 focus-visible:ring-offset-2 disabled:opacity-60 ${
           enabled ? "bg-forest-700" : "bg-surface-sunken ring-1 ring-line"
         }`}
@@ -136,7 +136,7 @@ export default function PushSubscribeButton() {
         />
       </button>
       {message ? (
-        <p role="status" className="max-w-[10rem] text-right text-[0.7rem] leading-snug text-bloom-500">
+        <p role="status" className="max-w-[10rem] text-right text-[0.7rem] leading-snug text-bloom-600">
           {message}
         </p>
       ) : null}

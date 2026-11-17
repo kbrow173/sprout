@@ -7,7 +7,10 @@
 
 export type LightLevel = "low" | "medium" | "bright";
 export type Difficulty = "easy" | "medium" | "fussy";
-export type CareTaskType = "water" | "rotate" | "prune" | "harvest" | "repot";
+export type CareTaskType = "water" | "rotate" | "prune" | "harvest" | "repot" | "fertilize";
+export type Hemisphere = "north" | "south";
+export type PotMaterial = "plastic" | "terracotta" | "ceramic" | "fabric";
+export type PotSize = "small" | "medium" | "large";
 /** Outcome of a moisture check on a water task (adaptive watering). */
 export type WaterCheckStatus = "watered" | "moist";
 export type ProfileSource = "seed" | "claude";
@@ -40,6 +43,8 @@ export interface SpeciesCare {
   harvesting: string | null;
   /** Days between harvests. Null unless `harvesting` is set. */
   harvest_days: number | null;
+  /** Days between feeds in the growing season. Null = don't schedule. (migration 008) */
+  fertilize_days: number | null;
   dos: string[];
   donts: string[];
   source: ProfileSource;
@@ -85,7 +90,22 @@ export interface Plant {
   acquired_at: string | null;
   care_species_id: string;
   notes: string | null;
+  /** Pot details — starting priors for the watering schedule (migration 008). */
+  pot_material: PotMaterial | null;
+  pot_size: PotSize | null;
   created_at: string;
+}
+
+/** One logged action on a plant — the care history (migration 008). */
+export interface CareEvent {
+  id: string;
+  plant_id: string;
+  task_type: CareTaskType;
+  /** watered | moist | done | skipped | snoozed | repotted | roots_ok */
+  action: string;
+  at: string;
+  /** care_tasks state before this action — enables undo. */
+  prev_state: Record<string, unknown> | null;
 }
 
 /** A generated reminder for a specific plant. */
@@ -125,6 +145,8 @@ export interface Settings {
   /** Local date (in `timezone`) the morning digest last ran — dedupe guard. */
   last_morning_send_date: string | null;
   language: Locale;
+  /** Flips the growing season for watering/fertilizing/repotting (migration 008). */
+  hemisphere: Hemisphere;
 }
 
 /** Shape returned by the Claude vision identify endpoint. */

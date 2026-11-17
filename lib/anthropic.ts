@@ -72,7 +72,9 @@ export async function identifyPlant(
 ): Promise<ClaudeIdentifyResult> {
   const message = await client().messages.create({
     model: MODEL,
-    max_tokens: 2048,
+    // Thinking tokens count against max_tokens; 2048 risked truncating the
+    // reasoning before the tool call (L37). 16k is the non-streaming ceiling.
+    max_tokens: 16000,
     thinking: { type: "adaptive" },
     system: IDENTIFY_SYSTEM_PROMPT,
     tools: [
@@ -198,6 +200,8 @@ export interface GeneratedCareProfile {
   harvesting: string | null;
   /** Days between harvests. Null unless harvesting is set. */
   harvest_days: number | null;
+  /** Days between liquid feeds in the growing season; null = don't feed on a schedule. */
+  fertilize_days: number | null;
   dos: string[];
   donts: string[];
 }
@@ -213,7 +217,7 @@ export async function generateCareProfile(
 ): Promise<GeneratedCareProfile> {
   const message = await client().messages.create({
     model: MODEL,
-    max_tokens: 2048,
+    max_tokens: 8000,
     tools: [
       {
         name: "care_profile",
@@ -247,6 +251,11 @@ export async function generateCareProfile(
               type: ["integer", "null"],
               description: "Days between harvests. Only set if harvesting is set; null otherwise.",
             },
+            fertilize_days: {
+              type: ["integer", "null"],
+              description:
+                "Days between feeds with diluted liquid fertilizer during the growing season (e.g. 14-21 for heavy feeders like basil or pothos, 28 for most foliage plants, 42-60 for succulents, cacti and snake plants). Null only for plants that should not be fed on a schedule.",
+            },
             dos: { type: "array", items: { type: "string" }, description: "3-5 short care tips." },
             donts: { type: "array", items: { type: "string" }, description: "2-4 short care warnings." },
           },
@@ -267,6 +276,7 @@ export async function generateCareProfile(
             "pruning",
             "harvesting",
             "harvest_days",
+            "fertilize_days",
             "dos",
             "donts",
           ],
@@ -317,6 +327,7 @@ export async function generateCareProfile(
     rotate_days: days(raw.rotate_days, 14, 90),
     repot_months: days(raw.repot_months, 18, 60),
     harvest_days: harvestDays,
+    fertilize_days: raw.fertilize_days == null ? null : days(raw.fertilize_days, 28, 90),
     dos: Array.isArray(raw.dos) ? raw.dos : [],
     donts: Array.isArray(raw.donts) ? raw.donts : [],
   };
@@ -340,7 +351,7 @@ export async function translateCareProfile(
 ): Promise<TranslatableCareFields> {
   const message = await client().messages.create({
     model: MODEL,
-    max_tokens: 2048,
+    max_tokens: 8000,
     tools: [
       {
         name: "translated_care_profile",

@@ -21,7 +21,13 @@ self.addEventListener("push", (event) => {
     data: { url: data.url || "/" },
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // App-icon badge with the due-plant count (Badging API, where supported).
+  const badge =
+    typeof data.badge === "number" && self.navigator && "setAppBadge" in self.navigator
+      ? self.navigator.setAppBadge(data.badge).catch(() => {})
+      : Promise.resolve();
+
+  event.waitUntil(Promise.all([self.registration.showNotification(title, options), badge]));
 });
 
 self.addEventListener("notificationclick", (event) => {

@@ -17,7 +17,7 @@ export default function PageHeader({
     <header className="mb-6 flex items-end justify-between gap-3">
       <div>
         {eyebrow ? (
-          <p className="mb-1 text-sm font-semibold text-sprout-600">{eyebrow}</p>
+          <p className="mb-1 text-sm font-semibold text-forest-600">{eyebrow}</p>
         ) : null}
         <h1 className="text-3xl font-bold text-forest-800">{title}</h1>
       </div>

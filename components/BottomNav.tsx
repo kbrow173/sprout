@@ -62,7 +62,7 @@ function NavItem({ tab, active }: { tab: Tab; active: boolean }) {
     <Link
       href={tab.href}
       aria-current={active ? "page" : undefined}
-      className={`flex flex-col items-center gap-1 rounded-2xl py-1.5 text-[0.68rem] font-semibold transition-colors ${
+      className={`flex flex-col items-center gap-1 rounded-2xl py-1.5 text-xs font-semibold transition-colors ${
         active ? "text-forest-700" : "text-faint hover:text-muted"
       }`}
     >

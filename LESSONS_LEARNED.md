@@ -540,3 +540,39 @@ and 401s API/action POSTs without a valid `sprout_session` cookie
 Next's docs warn a matcher change can silently drop proxy coverage of Server
 Functions, so every action also calls `requireSession()` and the open API
 routes check `requestHasSession()`. Gate is OFF while APP_PASSCODE is unset.
+
+## L36 — Plant care depth: model what growers actually do, per season and per pot
+Phase 10 (user asked for "all of it" after noticing fertilizing was missing).
+- **Fertilizing** is growing-season only: liquid feed at half strength (quarter
+  for succulents, orchids, snake plants, rosemary, thyme) every 2–6 weeks by
+  species, nothing in fall/winter, nothing for 6 weeks after repotting. Out-of-
+  season due dates snap to the next season start.
+- **Repotting** is a spring root check, not a calendar nag. "Roots are fine" →
+  next spring at least ~6 months out. A first draft used 300 days, which turned
+  a July check into an April check two years later — caught by a unit test.
+- **Pot answers** (drainage, light, material, size) set the starting watering
+  factor (`wateringPrior`, 0.6–1.6). Editing them re-bases the factor and keeps
+  what the plant already learned.
+- **Hemisphere** flips the growing season for watering, feeding and repotting.
+- **History + undo**: each action logs `care_events` with a pre-change
+  snapshot. Undo only works on the newest event for a task — restoring an older
+  snapshot would erase later actions. Known gap: undoing "Repotted" does not
+  undo the fertilize push-out.
+**Prevention:** for any recurring real-world task ask: does it depend on
+season? on the container? does a related task pause it? Encode as pure tested
+functions before wiring UI.
+
+## L37 — Thinking tokens count against max_tokens
+`identifyPlant` used adaptive thinking with `max_tokens: 2048`; thinking counts
+inside `max_tokens`, so a long reasoning pass could truncate before the tool
+call. Raised to 16000 (non-streaming guidance); other calls to 8000.
+**Prevention:** with thinking on, size `max_tokens` for reasoning + answer.
+
+## L38 — i18n: build every locale from one key list and check it mechanically
+Phase 9. Half the UI was hardcoded English though its namespaces existed.
+Rebuilt all four catalogs together (244 keys) and checked with a script:
+identical key sets, every ICU message parses, every literal key in code exists.
+The client maps HTTP status to translated errors, so server English never
+shows. Values code reads (light-location strings) stay English; labels translate.
+**Prevention:** add strings to all locales in one change; a missing key renders
+as a raw key path, not an error.

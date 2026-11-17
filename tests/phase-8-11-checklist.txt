@@ -1,0 +1,64 @@
+SPROUT — PHASES 8–11 REAL-WORLD CHECKLIST
+==========================================
+
+BEFORE YOU START
+[ ] Supabase SQL editor: run supabase/migration_008_care_depth.sql. It should finish with no errors.
+[ ] (Optional, recommended) Vercel → Settings → Environment Variables: add APP_PASSCODE
+    (8+ characters). Optional: APP_URL = https://sprout-ten-theta.vercel.app (email links).
+    Redeploy after adding.
+
+1. PASSCODE LOCK (only if you set APP_PASSCODE)
+[ ] Open the app → you land on "Welcome back" with a passcode box.
+[ ] Wrong passcode → "That's not it — try again." after a short pause.
+[ ] Right passcode → you land where you were going. Close and reopen: still unlocked.
+[ ] Settings → "Lock this device" → back to the passcode screen.
+[ ] Morning reminders still arrive (the cron has its own secret).
+
+2. FERTILIZING
+[ ] Open any foliage plant → a "Fertilizing" section: "every N days … half strength", spring/summer note.
+[ ] Open a succulent / snake plant / orchid → says "quarter strength".
+[ ] "Coming up" lists Fertilize with a date. In Nov–Mar (north) it shows next April.
+
+3. POT ANSWERS → WATERING
+[ ] Add a plant: pot material + size chips appear (tap again to un-select).
+[ ] Add the same species twice: terracotta/small/direct sun vs plastic/large/low light.
+    The first shows a SHORTER "thirsty about every N days" on its plant page.
+[ ] Untick "drainage hole" → warning under Soil, longer interval.
+
+4. TODAY SCREEN
+[ ] A plant with two things due shows ONE card with two rows.
+[ ] Tap "Watered" → card disappears, dark toast "Watered <name> 💧" with Undo.
+[ ] Tap Undo within 7 seconds → the task comes back.
+[ ] "…" → "Remind me tomorrow" → gone today, back tomorrow.
+[ ] On rotate/fertilize: "…" → "Skip this time" works.
+[ ] Repot task shows "Roots are fine" / "Repotted". Repotted → toast mentions 6 weeks no feeding;
+    the plant page's Fertilize date moves out 6+ weeks.
+
+5. HISTORY, EDIT, NOTES
+[ ] Plant page → History lists what you just did, newest first.
+[ ] Edit → change nickname, add notes, change pot → Save → new name + Notes section show.
+
+6. GARDEN
+[ ] Cards show "Needs you today" (coral dot) or "Next in N days".
+
+7. SETTINGS
+[ ] Change morning time (hour list), Save → green "✓ Saved".
+[ ] Bad email (e.g. abc) → red "That email address doesn't look right." Nothing saved.
+[ ] "Use my timezone" fills your zone. The list has every zone.
+[ ] Seasons → Southern hemisphere → Save → plant pages say Oct–Mar for fertilizing.
+
+8. LANGUAGES (Settings → Language)
+[ ] Español: Today, Garden, Add flow, plant page, Settings, toasts all Spanish.
+    Care text (soil, toxicity, tips) turns Spanish a few seconds after first opening a plant.
+[ ] Repeat for Deutsch and 한국어, then back to English.
+[ ] With Spanish on, the next morning push/email arrives in Spanish.
+
+9. FIRST RUN + PHONE POLISH
+[ ] Empty garden: Today shows a 3-step setup card. iPhone Safari explains Share → Add to Home Screen.
+[ ] Installed app with plants due: app icon shows a number badge.
+[ ] Morning push for ONE plant opens that plant's page when tapped.
+[ ] Pinch-to-zoom works; tapping a text box doesn't zoom the page.
+
+DEV CHECKS (done by Claude)
+- tsc, eslint, 35 unit tests, next build: clean. i18n: 244 keys × 4 locales, ICU valid, all code keys present.
+- NOT verified: anything needing migration_008 on the live DB, real push/badge, real email.
