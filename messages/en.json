@@ -49,7 +49,9 @@
     "toastDone": "{task} done for {name}",
     "undo": "Undo",
     "undone": "Undone",
-    "undoFailed": "Couldn't undo that one"
+    "undoFailed": "Couldn't undo that one",
+    "alreadyLogged": "Already logged today — nothing changed",
+    "actionFailed": "That didn't save — check your connection and try again"
   },
   "onboarding": {
     "title": "Let's grow your garden",

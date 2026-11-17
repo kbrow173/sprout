@@ -317,8 +317,15 @@ export async function generateCareProfile(
   // harvest_days only means anything alongside a harvesting note.
   const harvestDays = raw.harvesting ? days(raw.harvest_days, 14, 90) : null;
 
+  // Enums are schema HINTS (L8) and the DB now has CHECK constraints (migration
+  // 008): an off-enum value would make the whole insert fail (L39).
+  const difficulty: Difficulty = (["easy", "medium", "fussy"] as const).includes(raw.difficulty) ? raw.difficulty : "medium";
+  const light: LightLevel = (["low", "medium", "bright"] as const).includes(raw.light) ? raw.light : "medium";
+
   return {
     ...raw,
+    difficulty,
+    light,
     common_name: (raw.common_name ?? "").trim() || commonName,
     scientific_name: scientific,
     illustration_key: illustrationKey,

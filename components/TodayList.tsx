@@ -44,7 +44,7 @@ interface Toast {
  * Today's tasks, one card per PLANT (Phase 11 — a plant with water + rotate
  * due used to show as two cards). Owns the Undo toast: it lives here, above
  * the cards, because a card disappears the moment its task is done (L36).
- * Also mirrors the due count onto the app-icon badge where supported.
+ * (The app-icon badge lives in AppBadge, which renders even when this doesn't.)
  */
 export default function TodayList({ tasks }: { tasks: DueTask[] }) {
   const t = useTranslations("today");
@@ -53,14 +53,6 @@ export default function TodayList({ tasks }: { tasks: DueTask[] }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const groups = groupByPlant(tasks);
-
-  useEffect(() => {
-    // App-icon badge (installed PWA, Chrome/Edge/Safari 17+). Best-effort.
-    const nav = navigator as Navigator & { setAppBadge?: (n: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
-    const count = new Set(tasks.map((x) => x.plant.id)).size;
-    if (count > 0) nav.setAppBadge?.(count).catch(() => {});
-    else nav.clearAppBadge?.().catch(() => {});
-  }, [tasks]);
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
@@ -178,13 +170,45 @@ function TaskRow({
   const [menu, setMenu] = useState(false);
   const Icon = TASK_ICON[task.type];
 
+  // A thrown action (expired session, network) shows a toast instead of
+  // replacing the page with the error boundary; a no-op (e.g. a second
+  // "Watered" the same day) says so instead of claiming success (L39).
+  function run(fn: () => Promise<string | null>, message: string) {
+    start(async () => {
+      try {
+        const eventId = await fn();
+        onDone(eventId, eventId ? message : t("alreadyLogged"));
+      } catch (err) {
+        console.error("[sprout] task action failed:", err);
+        onDone(null, t("actionFailed"));
+      }
+    });
+  }
   function act(action: TaskAction, message: string) {
     setMenu(false);
-    start(async () => onDone(await performTaskAction(task.id, action), message));
+    run(() => performTaskAction(task.id, action), message);
   }
   function water(status: WaterCheckStatus) {
-    start(async () => onDone(await performWaterCheck(task.id, status), t(status === "watered" ? "toastWatered" : "toastMoist", { name: plantName })));
+    run(() => performWaterCheck(task.id, status), t(status === "watered" ? "toastWatered" : "toastMoist", { name: plantName }));
   }
+
+  // Close the "…" menu on outside tap or Escape.
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menu) return;
+    const onDown = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenu(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenu(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
 
   const label = task.type === "water" ? t("checkSoil") : task.type === "repot" ? t("checkRoots") : tt(task.type);
 
@@ -198,7 +222,7 @@ function TaskRow({
             {task.overdue ? <span className="font-medium"> · {t("overdue")}</span> : null}
           </span>
         </p>
-        <div className="relative">
+        <div ref={menuRef} className="relative">
           <button
             type="button"
             onClick={() => setMenu((v) => !v)}

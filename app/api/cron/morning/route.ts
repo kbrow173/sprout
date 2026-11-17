@@ -73,8 +73,9 @@ export async function POST(request: Request): Promise<Response> {
       const t = await serverTranslator(settings.language, "push");
       const title = t("morningTitle", { count: plantCount });
       const body = names.length > 3 ? t("morningBodyMore", { names: names.slice(0, 3).join(", "), more: names.length - 3 }) : names.join(", ");
-      // One plant → open its care sheet directly; several → Today.
-      const url = plantCount === 1 ? `/plant/${tasks[0].plant.id}` : "/";
+      // One plant with only watering due → its care sheet (which can log it).
+      // Anything else → Today, where every action lives (L39).
+      const url = plantCount === 1 && tasks.every((t) => t.type === "water") ? `/plant/${tasks[0].plant.id}` : "/";
 
       // Push goes to every stored subscription — a device opts in/out by
       // having a row (L26).

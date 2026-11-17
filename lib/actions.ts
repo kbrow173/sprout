@@ -6,7 +6,8 @@ import { cookies } from "next/headers";
 import { serverClient } from "@/lib/supabase";
 import { requireSession } from "@/lib/auth-server";
 import { getSpeciesById } from "@/lib/species";
-import { applyTaskAction, generateCareTasksForPlant, rebaseWaterPrior, recordWaterCheck, undoCareEvent } from "@/lib/care";
+import { applyTaskAction, generateCareTasksForPlant, rebaseWaterPrior, recordWaterCheck, rescheduleSeasonalTasks, undoCareEvent } from "@/lib/care";
+import { getSettings } from "@/lib/settings";
 import { wateringPrior, type TaskAction } from "@/lib/care-math";
 import { LOCALE_COOKIE, LOCALES, DEFAULT_LOCALE } from "@/i18n/request";
 import type { Hemisphere, Locale, PotMaterial, PotSize, WaterCheckStatus } from "@/lib/types";
@@ -123,7 +124,8 @@ export async function updatePlantAction(formData: FormData): Promise<void> {
       nickname: textField(formData, "nickname", 60),
       notes: textField(formData, "notes", 1000),
       acquired_at: dateField(formData, "acquired_at"),
-      soil_mix: textField(formData, "soil_mix", 200),
+      // Not potted → the soil input isn't rendered; keep what's stored (L39).
+      ...(pot.potted ? { soil_mix: textField(formData, "soil_mix", 200) } : {}),
       ...pot,
     })
     .eq("id", id);
@@ -295,6 +297,7 @@ export async function updateSettingsAction(_prev: SettingsState, formData: FormD
   const rawLanguage = String(formData.get("language") ?? DEFAULT_LOCALE);
   const language: Locale = (LOCALES as string[]).includes(rawLanguage) ? (rawLanguage as Locale) : DEFAULT_LOCALE;
   const hemisphere: Hemisphere = formData.get("hemisphere") === "south" ? "south" : "north";
+  const previousHemisphere = (await getSettings()).hemisphere ?? "north";
 
   // push_enabled is intentionally NOT set — push is per-device (L26).
   const { error } = await serverClient()
@@ -312,6 +315,7 @@ export async function updateSettingsAction(_prev: SettingsState, formData: FormD
     console.error("[sprout] updateSettings:", error.message);
     return { status: "error", error: "saveFailed" };
   }
+  if (hemisphere !== previousHemisphere) await rescheduleSeasonalTasks(hemisphere);
 
   // next-intl reads locale from this cookie; revalidate the root layout so
   // the whole app switches language immediately.

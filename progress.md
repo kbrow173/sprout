@@ -468,7 +468,7 @@ Done:
 `proxy.ts` + per-action `requireSession()`; HMAC session cookie; login page;
 lock button. OFF until `APP_PASSCODE` is set in Vercel. L35.
 
-## Phases 9–11 — Translations, plant-care depth, UX + accessibility  🟡 code complete, ⚠️ migration_008 before deploy
+## Phases 9–11 — Translations, plant-care depth, UX + accessibility  🟢 deployed, awaiting device test
 User: "Build the app. All of it." Default chosen: liquid fertilizer, half strength.
 - ✅ Phase 10: fertilizing, pot-based watering priors, spring root checks,
   hemisphere, care history + undo, snooze/skip (L36)
@@ -479,7 +479,8 @@ User: "Build the app. All of it." Default chosen: liquid fertilizer, half streng
 - ✅ Phase 9: every screen + push + email in en/es/de/ko; care text localized (L38)
 - ✅ Vision max_tokens fix (L37); slim species picker query
 - ✅ tsc / eslint / 35 tests / build clean; i18n check 244 keys × 4 OK
-- ⚠️ Edge Case Destroyer agent stopped by the account spend limit before
-  reporting — re-run after the limit resets
-- ⚠️ User: run `supabase/migration_008_care_depth.sql`, then deploy;
-  checklist `tests/phase-8-11-checklist.txt`
+- ✅ Edge Case Destroyer: 0 critical, 2 high, 4 medium, 6 low — all fixed except
+  one accepted low (non-atomic undo across devices). L39.
+- ✅ migration_008 run live (verified: 40 species with fertilize_days, 10 fertilize tasks)
+- ✅ Deployed; Vercel build fixed by self-hosting fonts (L34)
+- ⏳ User: device checklist `tests/phase-8-11-checklist.txt`

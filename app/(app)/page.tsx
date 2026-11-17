@@ -4,6 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import Onboarding from "@/components/Onboarding";
 import TodayList from "@/components/TodayList";
+import AppBadge from "@/components/AppBadge";
 import { getDueTasks, currentLocalDateAndHour } from "@/lib/care";
 import { getPlants } from "@/lib/plants";
 import { getSettings } from "@/lib/settings";
@@ -24,6 +25,7 @@ export default async function TodayPage() {
   return (
     <>
       <PageHeader eyebrow={greeting(settings.timezone, t)} title={t("title")} />
+      <AppBadge count={new Set(tasks.map((task) => task.plant.id)).size} />
       {plants.length === 0 ? (
         <Onboarding />
       ) : tasks.length === 0 ? (

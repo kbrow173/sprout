@@ -42,7 +42,8 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder or user action needed
 ## Components
 | File | Purpose | Status |
 |---|---|---|
-| `components/TodayList.tsx` | Today's tasks **grouped per plant** (one card, several rows). Water: Still moist / Watered + how-to-check. Repot: Roots are fine / Repotted. Others: Done. "…" menu: Remind me tomorrow / Skip this time. **Undo toast** (lives here because a card unmounts once done). Mirrors the due-plant count to the app-icon badge. Replaced `ReminderCard`. | 🟢 |
+| `components/TodayList.tsx` | Today's tasks **grouped per plant** (one card, several rows). Water: Still moist / Watered + how-to-check. Repot: Roots are fine / Repotted. Others: Done. "…" menu: Remind me tomorrow / Skip this time. **Undo toast** (lives here because a card unmounts once done). Errors and no-ops show honest toasts; menu closes on outside tap/Escape. Replaced `ReminderCard`. | 🟢 |
+| `components/AppBadge.tsx` | Syncs the app-icon badge to the due-plant count; rendered by Today in every state so it clears (L39) | 🟢 |
 | `components/Onboarding.tsx` | First-run 3 steps: install (iOS Share → Add to Home Screen; hidden once installed), notifications, first plant | 🟢 |
 | `components/BottomNav.tsx` | Fixed bottom nav + center Add FAB, translated; labels 12px | 🟢 |
 | `components/PageHeader.tsx` | Screen header (eyebrow in `forest-600` for contrast) | 🟢 |
@@ -71,7 +72,7 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder or user action needed
 | `lib/anthropic.ts` | Claude (`claude-sonnet-5`): `identifyPlant` (vision, adaptive thinking, `max_tokens` 16000 — thinking counts against it, L37), `generateCareProfile` (+ `fertilize_days`, all numbers clamped), `translateCareProfile`. `ILLUSTRATION_KEYS` must match `PlantIllustration.tsx`. | 🟢 |
 | `lib/care-math.ts` | **Pure** scheduling rules (unit-tested), all on a `CareClock {timezone, hemisphere}`: local dates (L11), DST-safe day math (L28), seasons per hemisphere, `seasonStartOnOrAfter` / `snapToGrowingSeason`, `intervalDaysFor` (+ fertilize), `nextDueFor` (fertilize in season only; repot → spring check), `planWaterCheck` (L21, L29), `planTaskAction` (done/skip/snooze/roots_ok), `fertilizeDueAfterRepot` (6-week pause), `wateringPrior` (pot → starting factor), `fertilizeStrength`, `inMorningWindow` / `morningWindowDate` (L27) | 🟢 |
 | `lib/care-math.test.ts`, `lib/auth.test.ts` | Vitest: 30 scheduling tests + 5 gate tests | 🟢 |
-| `lib/care.ts` | Reminder engine, DB side. `clockOf(settings)`, `generateCareTasksForPlant(plant, species)` (5 task types; water starts at the prior), `rebaseWaterPrior`, `applyTaskAction` / `recordWaterCheck` (log to `care_events` with a pre-change snapshot; repot pushes the next feed), `undoCareEvent` (newest event per task only), `getDueTasks`, `getTasksForPlant`, `getNextDueByPlant`, `getCareHistory`, `expectedWaterIntervalDays` (L22), `localToday` | 🟢 |
+| `lib/care.ts` | Reminder engine, DB side. `clockOf(settings)`, `generateCareTasksForPlant(plant, species)` (5 task types; water starts at the prior), `rebaseWaterPrior`, `rescheduleSeasonalTasks` (on hemisphere change), `applyTaskAction` / `recordWaterCheck` (log to `care_events` with a pre-change snapshot; repot pushes the next feed and stores its old date as `_feed` so Undo restores it), `undoCareEvent` (newest event per task only), `getDueTasks`, `getTasksForPlant`, `getNextDueByPlant`, `getCareHistory`, `expectedWaterIntervalDays` (L22), `localToday` | 🟢 |
 | `lib/settings.ts` | `getSettings()`, React `cache()` | 🟢 |
 | `lib/translations.ts` | `getLocalizedSpeciesCare(species, locale)` — fetch-or-translate-and-cache care text (`species_care_translations`). Now used by the plant page. | 🟢 |
 | `lib/push.ts` | `sendPushToAll(payload)` → `{sent, pruned, failed}`; payload carries `url` (deep link) + `badge`; 12h TTL; prunes dead endpoints (L14) | 🟢 |
@@ -84,7 +85,7 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder or user action needed
 | `supabase/seed.sql` / `scripts/run-seed.mjs` | 36 species (28 houseplants + 10 herbs) incl. `fertilize_days`. Keep both in sync. | 🟢 |
 | `supabase/migration_002` … `_006` | harvest_days, morning send tracking, i18n, adaptive watering, herb illustrations | 🟢 (003: see progress.md) |
 | `supabase/migration_007_rls.sql` | RLS on all tables + case-insensitive unique species index (L31, L33). Run live, verified. | 🟢 |
-| `supabase/migration_008_care_depth.sql` | **Phase 10**: `species_care.fertilize_days` (+ per-species backfill), `plants.pot_material/pot_size`, `settings.hemisphere`, `care_events` table (RLS on), CHECK constraints on enum columns, single-row `settings`, fertilize tasks for existing plants. Idempotent. **Must run before deploying Phase 10 code.** | 🟡 **user action needed** |
+| `supabase/migration_008_care_depth.sql` | **Phase 10**: `species_care.fertilize_days` (+ per-species backfill), `plants.pot_material/pot_size`, `settings.hemisphere`, `care_events` table (RLS on), CHECK constraints on enum columns, single-row `settings`, fertilize tasks for existing plants. Idempotent. **Run live, verified.** | 🟢 |
 | `scripts/create-storage-bucket.mjs` | Creates the `plant-photos` bucket (`npm run storage:bucket`) | 🟢 |
 
 ## API routes
@@ -93,7 +94,7 @@ file change.** Status: 🟢 done · 🟡 shell/placeholder or user action needed
 | `app/api/identify/route.ts` | Photo → Claude vision → `IdentifyResult`. Session-checked. | 🟢 |
 | `app/api/care-profile/route.ts` | Fetch-or-generate care profile; dedupes on the resolved name (L30). Session-checked. | 🟢 |
 | `app/api/subscribe/route.ts` | Save/remove a push subscription. Session-checked. | 🟢 |
-| `app/api/cron/morning/route.ts` | `CRON_SECRET`. 3h catch-up window + once-per-day claim, released on failure (L27, L32). Push + email **in `settings.language`**; deep link to the plant when only one needs care; badge = due-plant count. | 🟢 |
+| `app/api/cron/morning/route.ts` | `CRON_SECRET`. 3h catch-up window + once-per-day claim, released on failure (L27, L32). Push + email **in `settings.language`**; deep link to the plant only when its due tasks are all watering; badge = due-plant count. | 🟢 |
 | `app/api/push/test/route.ts` | `CRON_SECRET`. Sends one test push now. | 🟢 |
 | `.github/workflows/morning-cron.yml` | Hourly at :17 → cron route. Needs `APP_URL` + `CRON_SECRET` repo secrets. | 🟢 |
 

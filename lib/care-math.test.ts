@@ -148,6 +148,16 @@ describe("nextDueFor — per-type rules", () => {
     expect(daysBetween("2026-02-01", due)).toBeGreaterThan(300);
   });
 
+  it("repot picks the NEAREST spring, never sooner than 30 days (L39)", () => {
+    // Added Oct 2026, 12-month repot → target Oct 2027: Apr 2027 (6.5 mo early)
+    // wins over Apr 2028 (5.5 mo late) thanks to the early bias.
+    expect(nextDueFor("repot", 365, "2026-10-15", "north")).toBe("2027-04-01");
+    // Target Feb 2027 → Apr 2027 is nearer than Apr 2026 (which is in the past anyway).
+    expect(nextDueFor("repot", 120, "2026-10-15", "north")).toBe("2027-04-01");
+    // Target Jun 2027 → Apr 2027 (2 months) beats Apr 2028.
+    expect(nextDueFor("repot", 547, "2025-12-01", "north")).toBe("2027-04-01");
+  });
+
   it("other tasks are today + interval", () => {
     expect(nextDueFor("rotate", 14, "2026-01-01", "north")).toBe("2026-01-15");
   });
@@ -197,6 +207,11 @@ describe("wateringPrior (L36)", () => {
     expect(wateringPrior({ ...base, has_drainage: false })).toBe(1.25);
     expect(wateringPrior({ ...base, light_location: "Low light" })).toBe(1.2);
     expect(wateringPrior({ ...base, light_location: "Bright direct sun", pot_material: "terracotta", pot_size: "small" })).toBe(0.6);
+  });
+
+  it("treats bright INDIRECT as bright, not direct sun (L39)", () => {
+    expect(wateringPrior({ ...base, light_location: "Bright indirect light" })).toBe(0.9);
+    expect(wateringPrior({ ...base, light_location: "Bright direct sun" })).toBe(0.8);
   });
 
   it("stays inside its band", () => {

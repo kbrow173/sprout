@@ -49,7 +49,9 @@
     "toastDone": "{name}: {task} 완료",
     "undo": "실행 취소",
     "undone": "취소했어요",
-    "undoFailed": "취소할 수 없어요"
+    "undoFailed": "취소할 수 없어요",
+    "alreadyLogged": "오늘 이미 기록했어요. 바뀐 건 없어요",
+    "actionFailed": "저장하지 못했어요. 연결을 확인하고 다시 시도하세요"
   },
   "onboarding": {
     "title": "정원을 만들어 볼까요",

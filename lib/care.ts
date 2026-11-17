@@ -8,6 +8,8 @@ import {
   nextDueFor,
   planTaskAction,
   planWaterCheck,
+  seasonStartOnOrAfter,
+  snapToGrowingSeason,
   toDateOnly,
   wateringPrior,
   type CareClock,
@@ -15,7 +17,7 @@ import {
   type TaskPatch,
   type TaskState,
 } from "@/lib/care-math";
-import type { CareEvent, CareTaskType, Plant, Settings, SpeciesCare, WaterCheckStatus } from "@/lib/types";
+import type { CareEvent, CareTaskType, Hemisphere, Plant, Settings, SpeciesCare, WaterCheckStatus } from "@/lib/types";
 
 // Re-exported so existing callers keep importing from "@/lib/care".
 export {
@@ -236,7 +238,13 @@ function snapshot(task: TaskState): TaskState {
 }
 
 /** Applies a patch and logs the event (with the pre-change snapshot for undo). */
-async function applyAndLog(ctx: TaskContext, patch: TaskPatch, action: string, at: Date): Promise<string | null> {
+async function applyAndLog(
+  ctx: TaskContext,
+  patch: TaskPatch,
+  action: string,
+  at: Date,
+  extra: Record<string, unknown> = {}
+): Promise<string | null> {
   const { error } = await serverClient().from("care_tasks").update(patch).eq("id", ctx.task.id);
   if (error) throw new Error(`[sprout] care_tasks update: ${error.message}`);
 
@@ -247,7 +255,7 @@ async function applyAndLog(ctx: TaskContext, patch: TaskPatch, action: string, a
       task_type: ctx.task.type,
       action,
       at: at.toISOString(),
-      prev_state: snapshot(ctx.task),
+      prev_state: { ...snapshot(ctx.task), ...extra },
     })
     .select("id")
     .single();
@@ -273,22 +281,27 @@ export async function applyTaskAction(taskId: string, action: TaskAction, at: Da
 
   const label =
     action === "done" ? (ctx.task.type === "repot" ? "repotted" : "done") : action === "skip" ? "skipped" : action === "snooze" ? "snoozed" : action;
-  const eventId = await applyAndLog(ctx, patch, label, at);
-
+  // Repotting pauses feeding. The fertilize task's old date rides along in the
+  // event snapshot (as _feed) so Undo restores it too (L39).
+  let feed: { id: string; next_due_at: string } | null = null;
   if (ctx.task.type === "repot" && action === "done") {
-    const today = toDateOnly(at, clock.timezone);
-    const { data: feed } = await serverClient()
+    const { data } = await serverClient()
       .from("care_tasks")
       .select("id, next_due_at")
       .eq("plant_id", ctx.task.plant_id)
       .eq("type", "fertilize")
       .maybeSingle();
-    if (feed) {
-      await serverClient()
-        .from("care_tasks")
-        .update({ next_due_at: fertilizeDueAfterRepot(feed.next_due_at as string, today, clock.hemisphere) })
-        .eq("id", feed.id);
-    }
+    feed = (data as { id: string; next_due_at: string } | null) ?? null;
+  }
+
+  const eventId = await applyAndLog(ctx, patch, label, at, feed ? { _feed: feed } : {});
+
+  if (feed) {
+    const today = toDateOnly(at, clock.timezone);
+    await serverClient()
+      .from("care_tasks")
+      .update({ next_due_at: fertilizeDueAfterRepot(feed.next_due_at, today, clock.hemisphere) })
+      .eq("id", feed.id);
   }
   return eventId;
 }
@@ -322,12 +335,18 @@ export async function undoCareEvent(eventId: string): Promise<boolean> {
     .maybeSingle();
   if (newest?.id !== event.id) return false;
 
+  const { _feed, ...taskState } = event.prev_state as Record<string, unknown> & {
+    _feed?: { id: string; next_due_at: string };
+  };
   const { error } = await serverClient()
     .from("care_tasks")
-    .update(event.prev_state)
+    .update(taskState)
     .eq("plant_id", event.plant_id)
     .eq("type", event.task_type);
   if (error) throw new Error(`[sprout] undoCareEvent: ${error.message}`);
+  if (_feed?.id && _feed.next_due_at) {
+    await serverClient().from("care_tasks").update({ next_due_at: _feed.next_due_at }).eq("id", _feed.id);
+  }
   await serverClient().from("care_events").delete().eq("id", event.id);
   return true;
 }
@@ -342,4 +361,24 @@ export async function getCareHistory(plantId: string, limit = 25): Promise<CareE
     .limit(limit);
   if (error) throw new Error(`[sprout] getCareHistory: ${error.message}`);
   return (data ?? []) as CareEvent[];
+}
+
+/**
+ * After the hemisphere setting changes, move every fertilize task into the
+ * new growing season and every repot check onto the new spring start —
+ * otherwise north-hemisphere dates keep firing in the southern autumn (L39).
+ */
+export async function rescheduleSeasonalTasks(hemisphere: Hemisphere): Promise<void> {
+  const { data, error } = await serverClient()
+    .from("care_tasks")
+    .select("id, type, next_due_at")
+    .in("type", ["fertilize", "repot"]);
+  if (error) throw new Error(`[sprout] rescheduleSeasonalTasks: ${error.message}`);
+  for (const row of (data ?? []) as { id: string; type: CareTaskType; next_due_at: string }[]) {
+    const next =
+      row.type === "fertilize" ? snapToGrowingSeason(row.next_due_at, hemisphere) : seasonStartOnOrAfter(row.next_due_at, hemisphere);
+    if (next !== row.next_due_at) {
+      await serverClient().from("care_tasks").update({ next_due_at: next }).eq("id", row.id);
+    }
+  }
 }

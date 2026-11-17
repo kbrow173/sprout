@@ -184,8 +184,24 @@ export function intervalDaysFor(
  */
 export function nextDueFor(type: CareTaskType, interval: number, today: string, hemisphere: Hemisphere): string {
   if (type === "fertilize") return snapToGrowingSeason(addDaysToDateOnly(today, interval), hemisphere);
-  if (type === "repot") return seasonStartOnOrAfter(addDaysToDateOnly(today, Math.max(30, interval - 120)), hemisphere);
+  if (type === "repot") return nearestSeasonStart(addDaysToDateOnly(today, interval), today, hemisphere);
   return addDaysToDateOnly(today, interval);
+}
+
+/**
+ * The season start (Apr 1 / Oct 1) closest to `target` (preferring the earlier
+ * one by up to 3 months), at least 30 days
+ * after `today` — so a repot check lands on the nearest spring, not always the
+ * later one (an October add used to skip a whole year — L39).
+ */
+export function nearestSeasonStart(target: string, today: string, hemisphere: Hemisphere): string {
+  const after = seasonStartOnOrAfter(target, hemisphere);
+  const before = seasonStartOnOrAfter(addDaysToDateOnly(target, -365), hemisphere);
+  const earliest = addDaysToDateOnly(today, 30);
+  // Biased up to ~3 months early: a slightly early root check is harmless, a
+  // late one means a rootbound plant.
+  if (before >= earliest && daysBetween(before, target) <= daysBetween(target, after) + 90) return before;
+  return after;
 }
 
 /**
@@ -203,7 +219,10 @@ export function wateringPrior(
   let f = 1;
   if (plant.potted && plant.has_drainage === false) f *= 1.25;
   const light = (plant.light_location ?? "").toLowerCase();
-  if (light.includes("direct")) f *= 0.8;
+  // "indirect" must be tested first: "bright indirect light" also contains
+  // "direct", which gave every bright-indirect plant the direct-sun factor (L39).
+  if (light.includes("indirect")) f *= 0.9;
+  else if (light.includes("direct")) f *= 0.8;
   else if (light.includes("bright")) f *= 0.9;
   else if (light.includes("low")) f *= 1.2;
   if (plant.potted) {

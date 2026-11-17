@@ -49,7 +49,9 @@
     "toastDone": "{task} für {name} erledigt",
     "undo": "Rückgängig",
     "undone": "Rückgängig gemacht",
-    "undoFailed": "Das ließ sich nicht rückgängig machen"
+    "undoFailed": "Das ließ sich nicht rückgängig machen",
+    "alreadyLogged": "Heute schon erfasst – nichts geändert",
+    "actionFailed": "Nicht gespeichert – prüf deine Verbindung und versuch es erneut"
   },
   "onboarding": {
     "title": "Lass uns deinen Garten anlegen",

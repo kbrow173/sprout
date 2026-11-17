@@ -576,3 +576,33 @@ The client maps HTTP status to translated errors, so server English never
 shows. Values code reads (light-location strings) stay English; labels translate.
 **Prevention:** add strings to all locales in one change; a missing key renders
 as a raw key path, not an error.
+
+## L39 — Edge Case Destroyer, Phases 9–11
+**Found (fixed):**
+1. **High:** `wateringPrior` checked `includes("direct")` before "bright", and
+   "bright **in**direct light" contains "direct" — every bright-indirect plant
+   (the most common answer) started ~11% too thirsty. Now "indirect" is
+   tested first; unit test added.
+2. **High:** the app-icon badge lived inside `TodayList`, which unmounts when
+   the last task is done, so the badge never cleared. Moved to `AppBadge`,
+   rendered by the Today page in every state.
+3. The single-plant push deep link opened a plant page that can only log
+   watering. Now it deep-links only when every due task is water.
+4. Switching hemisphere didn't move existing fertilize/repot dates.
+   `rescheduleSeasonalTasks` now runs when the setting changes.
+5. Claude's `difficulty`/`light` weren't clamped; the new CHECK constraints
+   would reject an off-enum value and break adding an unknown plant.
+6. Undoing "Repotted" left the fertilize pause in place. The fertilize date now
+   rides in the event snapshot (`_feed`) and Undo restores it.
+7. Editing a plant to "not potted" wiped its soil mix (input not rendered).
+8. The first repot check could skip a whole spring. Now: the nearest season
+   start, biased up to 3 months early (early root checks are harmless; late
+   means rootbound). Tests added.
+9. A no-op "Watered" still toasted success; action errors crashed to the error
+   boundary; the "…" menu didn't close on outside tap/Escape. All fixed.
+**Accepted:** Undo isn't atomic against a simultaneous action from a second
+device (check-then-update). Single-user app; not worth an RPC.
+**Prevention:** substring matching on human labels is fragile — test every
+chip value. Anything that must run in "all states" (badge sync) can't live in
+a component that only renders in one of them. A new DB CHECK constraint means
+every writer of that column needs a clamp, including AI output.

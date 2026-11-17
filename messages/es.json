@@ -49,7 +49,9 @@
     "toastDone": "{task}: hecho para {name}",
     "undo": "Deshacer",
     "undone": "Deshecho",
-    "undoFailed": "No se ha podido deshacer"
+    "undoFailed": "No se ha podido deshacer",
+    "alreadyLogged": "Ya estaba registrado hoy: no ha cambiado nada",
+    "actionFailed": "No se ha guardado: revisa tu conexión y vuelve a intentarlo"
   },
   "onboarding": {
     "title": "Vamos a crear tu jardín",
